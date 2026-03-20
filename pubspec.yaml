@@ -1,0 +1,32 @@
+name: edly
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  get: ^4.7.3
+  dio: ^5.9.0
+  retrofit: ^4.4.1
+  pretty_dio_logger: ^1.4.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  flutter_secure_storage: ^10.0.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

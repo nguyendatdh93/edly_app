@@ -1,0 +1,1233 @@
+import 'dart:async';
+
+import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/pages/account_profile/account_profile_view.dart';
+import 'package:edly/pages/home/home_constants.dart';
+import 'package:edly/pages/home/home_models.dart';
+import 'package:edly/pages/home/home_repository.dart';
+import 'package:edly/pages/sign_in/sign_in_view.dart';
+import 'package:edly/services/auth_repository.dart';
+import 'package:flutter/material.dart';
+
+class HomeView extends StatefulWidget {
+  const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  final PageController _pageController = PageController(viewportFraction: 0.92);
+  Timer? _slideTimer;
+  int _currentSlide = 0;
+  late Future<HomeDashboardData> _dashboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardFuture = HomeRepository.instance.fetchDashboard();
+    _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _slideTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reloadDashboard() async {
+    final future = HomeRepository.instance.fetchDashboard();
+
+    setState(() {
+      _dashboardFuture = future;
+    });
+
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder sẽ render trạng thái lỗi.
+    }
+  }
+
+  void _startAutoSlide() {
+    if (HomeContent.slides.length <= 1) {
+      return;
+    }
+
+    _slideTimer?.cancel();
+    _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
+
+      final nextPage = (_currentSlide + 1) % HomeContent.slides.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: HomePalette.background,
+      drawer: const _HomeDrawer(),
+      body: Builder(
+        builder: (context) {
+          return RefreshIndicator(
+            onRefresh: _reloadDashboard,
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  elevation: 0,
+                  backgroundColor: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  titleSpacing: 16,
+                  leading: IconButton(
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    icon: const Icon(
+                      Icons.menu_rounded,
+                      color: HomePalette.textPrimary,
+                    ),
+                  ),
+                  title: Row(
+                    children: [
+                      Image.asset(
+                        HomeContent.logoAsset,
+                        height: 34,
+                        fit: BoxFit.contain,
+                      ),
+                      const Spacer(),
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: HomePalette.chipGreen,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: HomePalette.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _TopNotice(),
+                        const SizedBox(height: 14),
+                        const _SearchBox(),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          height: 256,
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: HomeContent.slides.length,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentSlide = index;
+                              });
+                            },
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  right: index == HomeContent.slides.length - 1
+                                      ? 0
+                                      : 12,
+                                ),
+                                child: _HeroSlideCard(
+                                  data: HomeContent.slides[index],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _SlideIndicator(currentSlide: _currentSlide),
+                        const SizedBox(height: 24),
+                        FutureBuilder<HomeDashboardData>(
+                          future: _dashboardFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState !=
+                                ConnectionState.done) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            if (snapshot.hasError) {
+                              return _HomeErrorState(
+                                message: _messageFromError(snapshot.error),
+                                onRetry: _reloadDashboard,
+                              );
+                            }
+
+                            final dashboard =
+                                snapshot.data ?? const HomeDashboardData(
+                                  purchased: [],
+                                  featured: [],
+                                  recent: [],
+                                  categories: [],
+                                );
+
+                            if (dashboard.isEmpty) {
+                              return const _HomeEmptyState();
+                            }
+
+                            return _HomeSections(data: dashboard);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _messageFromError(Object? error) {
+    if (error is AppException) {
+      return error.message;
+    }
+
+    return 'Không thể tải dữ liệu trang chủ.';
+  }
+}
+
+class _HomeSections extends StatelessWidget {
+  const _HomeSections({required this.data});
+
+  final HomeDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (data.purchased.isNotEmpty) ...[
+          const _SectionHeader(
+            icon: Icons.shopping_bag_outlined,
+            iconColor: HomePalette.primary,
+            title: 'Gói học đã mua',
+            subtitle: 'Tiếp tục học các khóa học bạn đã sở hữu',
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 336,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: data.purchased.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 14),
+              itemBuilder: (context, index) {
+                return _PurchasedCourseCard(
+                  data: data.purchased[index],
+                  visual: _cardVisualAt(index),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+        if (data.featured.isNotEmpty) ...[
+          const _SectionHeader(
+            icon: Icons.star_rounded,
+            iconColor: HomePalette.warning,
+            title: 'Gói học nổi bật',
+            subtitle: 'Những khóa học đang được quan tâm nhiều trên web',
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 348,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: data.featured.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 14),
+              itemBuilder: (context, index) {
+                return _ShowcaseCourseCard(
+                  data: data.featured[index],
+                  visual: _cardVisualAt(index),
+                  tag: 'Nổi bật',
+                  badge: 'Top khóa học',
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+        if (data.recent.isNotEmpty) ...[
+          const _SectionHeader(
+            icon: Icons.visibility_outlined,
+            iconColor: Color(0xFF5B8CFF),
+            title: 'Gói học đã xem',
+            subtitle: 'Tiếp tục học từ những khóa học bạn đã xem gần đây',
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 348,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: data.recent.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 14),
+              itemBuilder: (context, index) {
+                return _ShowcaseCourseCard(
+                  data: data.recent[index],
+                  visual: _cardVisualAt(index + 1),
+                  tag: 'Đã xem',
+                  badge: 'Xem gần đây',
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+        ...data.categories.map(
+          (section) => Padding(
+            padding: const EdgeInsets.only(bottom: 30),
+            child: _CategorySection(section: section),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeDrawer extends StatelessWidget {
+  const _HomeDrawer();
+
+  Future<void> _openAccountProfile(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AccountProfileView(),
+      ),
+    );
+  }
+
+  Future<void> _goToSignIn(BuildContext context) async {
+    await AuthRepository.instance.signOut();
+
+    if (!context.mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const SignInView(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Image.asset(
+                    HomeContent.logoAsset,
+                    height: 38,
+                    fit: BoxFit.contain,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const _DrawerProfileCard(),
+              const SizedBox(height: 22),
+              ListTile(
+                onTap: () => _openAccountProfile(context),
+                leading: const Icon(
+                  Icons.badge_outlined,
+                  color: HomePalette.primary,
+                ),
+                title: Text(
+                  'Trang cá nhân',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: HomePalette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                subtitle: Text(
+                  'Cập nhật thông tin tài khoản',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: HomePalette.textSecondary,
+                      ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: HomePalette.textMuted,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                tileColor: HomePalette.chipBlue,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 2,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: HomeContent.drawerItems.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final item = HomeContent.drawerItems[index];
+                    return ListTile(
+                      onTap: () => Navigator.of(context).pop(),
+                      leading: Icon(item.icon, color: HomePalette.primary),
+                      title: Text(
+                        item.title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: HomePalette.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: HomePalette.textMuted,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () async => _goToSignIn(context),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFE9EC),
+                    foregroundColor: const Color(0xFFE5485D),
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text(
+                    'Đăng xuất',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerProfileCard extends StatelessWidget {
+  const _DrawerProfileCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = AuthRepository.instance.currentUser;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: HomePalette.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: HomePalette.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              user?.initials ?? 'E',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user == null ? 'Chào bạn' : 'Xin chào',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: HomePalette.textMuted,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user?.name.isNotEmpty == true
+                      ? user!.name
+                      : 'Khám phá khóa học Edly',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: HomePalette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user?.subtitle ?? 'Đăng nhập để đồng bộ tiến độ học tập',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: HomePalette.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopNotice extends StatelessWidget {
+  const _TopNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF1FF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'PRO',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Trang chủ mobile đang lấy dữ liệu thật từ web để đồng bộ các gói học.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: HomePalette.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchBox extends StatelessWidget {
+  const _SearchBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: const TextField(
+        readOnly: true,
+        onTapOutside: _dismissFocus,
+        decoration: InputDecoration(
+          icon: Icon(Icons.search_rounded, color: HomePalette.textMuted),
+          hintText: HomeContent.searchHint,
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroSlideCard extends StatelessWidget {
+  const _HeroSlideCard({required this.data});
+
+  final HomeHeroSlideData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: data.gradient,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x190F172A),
+            blurRadius: 24,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              data.highlight,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            height: 1.12,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      data.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            height: 1.45,
+                          ),
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton(
+                      onPressed: () {},
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: data.gradient.last,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        data.buttonText,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 78,
+                height: 78,
+                decoration: BoxDecoration(
+                  color: data.accent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  size: 38,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlideIndicator extends StatelessWidget {
+  const _SlideIndicator({required this.currentSlide});
+
+  final int currentSlide;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        HomeContent.slides.length,
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: currentSlide == index ? 20 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: currentSlide == index
+                ? HomePalette.primary
+                : HomePalette.border,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: iconColor, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: HomePalette.textPrimary,
+                            fontSize: 28,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: HomePalette.textSecondary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PurchasedCourseCard extends StatelessWidget {
+  const _PurchasedCourseCard({
+    required this.data,
+    required this.visual,
+  });
+
+  final HomeCourseItem data;
+  final _CardVisual visual;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ((data.progress ?? 0).clamp(0, 100)) / 100;
+
+    return Container(
+      width: 296,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: HomePalette.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CourseThumbnail(
+            imageUrl: data.thumbnailUrl,
+            height: 142,
+            visual: visual,
+            badge: data.category ?? 'Đã mua',
+            badgeColor: visual.accentColor,
+            footerLabel: data.totalLessons != null
+                ? '${data.totalLessons} học phần'
+                : null,
+            footerIcon: Icons.play_circle_fill_rounded,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            data.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: HomePalette.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  height: 1.3,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            data.shortDescription,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: HomePalette.textSecondary,
+                  height: 1.35,
+                ),
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Text(
+                'Progress: ${((data.progress ?? 0).clamp(0, 100))}%',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: HomePalette.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const Spacer(),
+              if (data.completedLessons != null && data.totalLessons != null)
+                Text(
+                  '${data.completedLessons}/${data.totalLessons}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: HomePalette.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: HomePalette.border,
+              valueColor: AlwaysStoppedAnimation<Color>(visual.accentColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShowcaseCourseCard extends StatelessWidget {
+  const _ShowcaseCourseCard({
+    required this.data,
+    required this.visual,
+    required this.tag,
+    required this.badge,
+  });
+
+  final HomeCourseItem data;
+  final _CardVisual visual;
+  final String tag;
+  final String badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 246,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: HomePalette.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CourseThumbnail(
+            imageUrl: data.thumbnailUrl,
+            height: 148,
+            visual: visual,
+            badge: tag,
+            badgeColor: visual.accentColor,
+            footerIcon: Icons.arrow_outward_rounded,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            data.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: HomePalette.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  height: 1.35,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            data.shortDescription,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: HomePalette.textSecondary,
+                  height: 1.4,
+                ),
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: visual.accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  Icons.workspace_premium_rounded,
+                  color: visual.accentColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  badge,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: HomePalette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({required this.section});
+
+  final HomeCategorySection section;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          icon: Icons.grid_view_rounded,
+          iconColor: HomePalette.secondary,
+          title: 'Khóa học ${section.title}',
+          subtitle: section.subtitle,
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 348,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: section.courses.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 14),
+            itemBuilder: (context, index) {
+              return _ShowcaseCourseCard(
+                data: section.courses[index],
+                visual: _cardVisualAt(index + 2),
+                tag: section.title,
+                badge: 'Khám phá ngay',
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CourseThumbnail extends StatelessWidget {
+  const _CourseThumbnail({
+    required this.imageUrl,
+    required this.height,
+    required this.visual,
+    required this.badge,
+    required this.badgeColor,
+    this.footerLabel,
+    this.footerIcon,
+  });
+
+  final String? imageUrl;
+  final double height;
+  final _CardVisual visual;
+  final String badge;
+  final Color badgeColor;
+  final String? footerLabel;
+  final IconData? footerIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: visual.gradient),
+              ),
+            ),
+            if (imageUrl != null && imageUrl!.isNotEmpty)
+              Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.04),
+                    Colors.black.withValues(alpha: 0.4),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            if (footerLabel != null)
+              Positioned(
+                left: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    footerLabel!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  footerIcon ?? Icons.open_in_new_rounded,
+                  color: visual.accentColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeErrorState extends StatelessWidget {
+  const _HomeErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 36,
+            color: HomePalette.textMuted,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: HomePalette.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 14),
+          FilledButton(
+            onPressed: () => onRetry(),
+            child: const Text('Tải lại'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeEmptyState extends StatelessWidget {
+  const _HomeEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: HomePalette.border),
+      ),
+      child: Text(
+        'Chưa có dữ liệu gói học để hiển thị trên trang chủ.',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: HomePalette.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _CardVisual {
+  const _CardVisual({
+    required this.gradient,
+    required this.accentColor,
+  });
+
+  final List<Color> gradient;
+  final Color accentColor;
+}
+
+const List<_CardVisual> _cardVisuals = [
+  _CardVisual(
+    gradient: [Color(0xFFE8F0FF), Color(0xFFD8E6FF)],
+    accentColor: Color(0xFF3F69FF),
+  ),
+  _CardVisual(
+    gradient: [Color(0xFFFFF0EA), Color(0xFFFFE2D3)],
+    accentColor: Color(0xFFFF6F3C),
+  ),
+  _CardVisual(
+    gradient: [Color(0xFFE8FBF7), Color(0xFFD1F4EC)],
+    accentColor: Color(0xFF17B97C),
+  ),
+  _CardVisual(
+    gradient: [Color(0xFFFFF4D6), Color(0xFFFFE8A8)],
+    accentColor: Color(0xFFFFB020),
+  ),
+];
+
+_CardVisual _cardVisualAt(int index) {
+  return _cardVisuals[index % _cardVisuals.length];
+}
+
+void _dismissFocus(PointerDownEvent _) {
+  FocusManager.instance.primaryFocus?.unfocus();
+}
