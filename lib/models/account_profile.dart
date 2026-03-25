@@ -37,9 +37,7 @@ class AccountProfileScreenData {
     }
 
     if (value is Map) {
-      return value.map(
-        (key, item) => MapEntry(key.toString(), item),
-      );
+      return value.map((key, item) => MapEntry(key.toString(), item));
     }
 
     return const {};
@@ -61,6 +59,7 @@ class AccountProfile {
     required this.name,
     this.email,
     this.phone,
+    this.balance,
     this.avatarUrl,
     this.role,
     this.roleName,
@@ -80,6 +79,7 @@ class AccountProfile {
   final String name;
   final String? email;
   final String? phone;
+  final int? balance;
   final String? avatarUrl;
   final String? role;
   final String? roleName;
@@ -100,6 +100,7 @@ class AccountProfile {
       name: (json['name'] ?? '').toString(),
       email: _readNullableString(json['email']),
       phone: _readNullableString(json['phone']),
+      balance: _readNullableInt(json['balance']),
       avatarUrl: _readNullableString(json['avatar']),
       role: _readNullableString(json['role']),
       roleName: _readNullableString(json['role_name']),
@@ -118,12 +119,13 @@ class AccountProfile {
     );
   }
 
-  AuthUser toAuthUser() {
+  AuthUser toAuthUser({AuthUser? fallbackUser}) {
     return AuthUser(
       id: id,
       name: name,
       email: email,
       phone: phone,
+      balance: balance ?? fallbackUser?.balance,
       avatarUrl: avatarUrl,
       role: role,
       roleName: roleName,
@@ -212,8 +214,12 @@ class AccountProfileFormSchema {
       email: AccountProfileFieldState.fromJson(_asMap(fields['email'])),
       birthday: AccountProfileFieldState.fromJson(_asMap(fields['birthday'])),
       userType: AccountProfileFieldState.fromJson(_asMap(fields['user_type'])),
-      province: AccountProfileFieldState.fromJson(_asMap(fields['province_id'])),
-      district: AccountProfileFieldState.fromJson(_asMap(fields['district_id'])),
+      province: AccountProfileFieldState.fromJson(
+        _asMap(fields['province_id']),
+      ),
+      district: AccountProfileFieldState.fromJson(
+        _asMap(fields['district_id']),
+      ),
       school: AccountProfileFieldState.fromJson(_asMap(fields['school_id'])),
       userTypeOptions: _readSelectOptions(options['user_types']),
       birthYearOptions: _readSelectOptions(options['birth_years']),
@@ -229,9 +235,7 @@ class AccountProfileFormSchema {
     }
 
     if (value is Map) {
-      return value.map(
-        (key, item) => MapEntry(key.toString(), item),
-      );
+      return value.map((key, item) => MapEntry(key.toString(), item));
     }
 
     return const {};
@@ -248,7 +252,9 @@ class AccountProfileFormSchema {
         .toList(growable: false);
   }
 
-  static List<AccountProfileLocationOption> _readLocationOptions(dynamic value) {
+  static List<AccountProfileLocationOption> _readLocationOptions(
+    dynamic value,
+  ) {
     if (value is! List) {
       return const [];
     }
@@ -298,10 +304,7 @@ class AccountProfileFieldState {
 }
 
 class AccountProfileSelectOption {
-  const AccountProfileSelectOption({
-    required this.value,
-    required this.label,
-  });
+  const AccountProfileSelectOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -315,10 +318,7 @@ class AccountProfileSelectOption {
 }
 
 class AccountProfileLocationOption {
-  const AccountProfileLocationOption({
-    required this.id,
-    required this.name,
-  });
+  const AccountProfileLocationOption({required this.id, required this.name});
 
   final int id;
   final String name;

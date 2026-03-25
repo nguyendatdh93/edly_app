@@ -12,20 +12,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Repository gom toàn bộ luồng xác thực cho app mobile.
 class AuthRepository {
   AuthRepository._internal()
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: ApiConfig.baseUrl,
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
-            sendTimeout: const Duration(seconds: 15),
-            headers: const {
-              'Accept': 'application/json',
-            },
-            contentType: Headers.jsonContentType,
-            responseType: ResponseType.json,
-          ),
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: ApiConfig.baseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
+          headers: const {'Accept': 'application/json'},
+          contentType: Headers.jsonContentType,
+          responseType: ResponseType.json,
         ),
-        _storage = const FlutterSecureStorage();
+      ),
+      _storage = const FlutterSecureStorage();
 
   static final AuthRepository instance = AuthRepository._internal();
   static const String _sessionKey = 'edly.auth.session';
@@ -58,7 +56,10 @@ class AuthRepository {
       final storedSession = AuthSession.fromStorageJson(
         Map<String, dynamic>.from(decoded),
       );
-      final currentUser = await fetchCurrentUser(token: storedSession.token);
+      final fetchedUser = await fetchCurrentUser(token: storedSession.token);
+      final currentUser = fetchedUser.copyWith(
+        balance: fetchedUser.balance ?? storedSession.user.balance,
+      );
       final refreshedSession = storedSession.copyWith(user: currentUser);
       await _persistSession(refreshedSession);
       return true;
@@ -123,6 +124,12 @@ class AuthRepository {
     }
   }
 
+  Future<AuthUser> refreshCurrentUser() async {
+    final refreshedUser = await fetchCurrentUser();
+    await _replaceCurrentUser(refreshedUser);
+    return refreshedUser;
+  }
+
   Future<void> signOut() async {
     final activeToken = _session?.token;
 
@@ -172,7 +179,9 @@ class AuthRepository {
 
       final payload = _responseMap(response);
       final data = AccountProfileScreenData.fromJson(payload);
-      await _replaceCurrentUser(data.profile.toAuthUser());
+      await _replaceCurrentUser(
+        data.profile.toAuthUser(fallbackUser: currentUser),
+      );
       return data;
     } catch (error) {
       _throwFormattedError(error);
@@ -237,7 +246,9 @@ class AuthRepository {
       );
 
       final data = AccountProfileScreenData.fromJson(_responseMap(response));
-      await _replaceCurrentUser(data.profile.toAuthUser());
+      await _replaceCurrentUser(
+        data.profile.toAuthUser(fallbackUser: currentUser),
+      );
       return data;
     } catch (error) {
       _throwFormattedError(error);
@@ -246,10 +257,7 @@ class AuthRepository {
 
   Future<void> _persistSession(AuthSession session) async {
     _session = session;
-    await _storage.write(
-      key: _sessionKey,
-      value: jsonEncode(session.toJson()),
-    );
+    await _storage.write(key: _sessionKey, value: jsonEncode(session.toJson()));
   }
 
   Future<void> _replaceCurrentUser(AuthUser user) async {
@@ -267,10 +275,7 @@ class AuthRepository {
 
   Options _authorizedOptions(String token) {
     return Options(
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
   }
 
@@ -282,9 +287,7 @@ class AuthRepository {
     }
 
     if (data is Map) {
-      return data.map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
+      return data.map((key, value) => MapEntry(key.toString(), value));
     }
 
     throw const AppException('Phản hồi máy chủ không hợp lệ.');
@@ -337,9 +340,7 @@ class AuthRepository {
     }
   }
 
-  ApiValidationException? _validationExceptionFromDioError(
-    DioException error,
-  ) {
+  ApiValidationException? _validationExceptionFromDioError(DioException error) {
     if (error.response?.statusCode != 422) {
       return null;
     }
@@ -357,7 +358,9 @@ class AuthRepository {
     final message = _readMessage(data['message']);
 
     return ApiValidationException(
-      _isGenericValidationMessage(message) ? fieldErrors.values.first : (message ?? fieldErrors.values.first),
+      _isGenericValidationMessage(message)
+          ? fieldErrors.values.first
+          : (message ?? fieldErrors.values.first),
       statusCode: error.response?.statusCode,
       fieldErrors: fieldErrors,
     );
@@ -369,9 +372,7 @@ class AuthRepository {
     }
 
     if (value is Map) {
-      return value.map(
-        (key, item) => MapEntry(key.toString(), item),
-      );
+      return value.map((key, item) => MapEntry(key.toString(), item));
     }
 
     return null;

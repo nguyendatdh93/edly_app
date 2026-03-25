@@ -1,13 +1,17 @@
 import 'dart:async';
 
+import 'package:edly/pages/course_detail/course_detail_view.dart';
 import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/pages/account_profile/account_profile_view.dart';
 import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/home/home_models.dart';
 import 'package:edly/pages/home/home_repository.dart';
+import 'package:edly/pages/ielts_packages/ielts_packages_view.dart';
+import 'package:edly/pages/sat_packages/sat_packages_view.dart';
 import 'package:edly/pages/sign_in/sign_in_view.dart';
 import 'package:edly/services/auth_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -37,6 +41,11 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Future<void> _reloadDashboard() async {
+    try {
+      await AuthRepository.instance.refreshCurrentUser();
+    } catch (_) {
+      // Nếu refresh user lỗi thì vẫn thử tải dashboard.
+    }
     final future = HomeRepository.instance.fetchDashboard();
 
     setState(() {
@@ -68,6 +77,36 @@ class _HomeViewState extends State<HomeView> {
         curve: Curves.easeInOut,
       );
     });
+  }
+
+  void _openCourseDetail(
+    HomeCourseItem course,
+    _CardVisual visual,
+    String sourceLabel,
+    List<HomeCourseItem> relatedCourses,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CourseDetailView(
+          course: course,
+          gradient: visual.gradient,
+          accentColor: visual.accentColor,
+          sourceLabel: sourceLabel,
+          relatedCourses: relatedCourses,
+        ),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    try {
+      await AuthRepository.instance.refreshCurrentUser();
+    } catch (_) {
+      // Bỏ qua lỗi refresh user, vẫn reload dashboard.
+    }
+    await _reloadDashboard();
   }
 
   @override
@@ -123,8 +162,6 @@ class _HomeViewState extends State<HomeView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _TopNotice(),
-                        const SizedBox(height: 14),
                         const _SearchBox(),
                         const SizedBox(height: 18),
                         SizedBox(
@@ -175,7 +212,8 @@ class _HomeViewState extends State<HomeView> {
                             }
 
                             final dashboard =
-                                snapshot.data ?? const HomeDashboardData(
+                                snapshot.data ??
+                                const HomeDashboardData(
                                   purchased: [],
                                   featured: [],
                                   recent: [],
@@ -186,7 +224,10 @@ class _HomeViewState extends State<HomeView> {
                               return const _HomeEmptyState();
                             }
 
-                            return _HomeSections(data: dashboard);
+                            return _HomeSections(
+                              data: dashboard,
+                              onCourseTap: _openCourseDetail,
+                            );
                           },
                         ),
                       ],
@@ -211,9 +252,16 @@ class _HomeViewState extends State<HomeView> {
 }
 
 class _HomeSections extends StatelessWidget {
-  const _HomeSections({required this.data});
+  const _HomeSections({required this.data, required this.onCourseTap});
 
   final HomeDashboardData data;
+  final void Function(
+    HomeCourseItem course,
+    _CardVisual visual,
+    String sourceLabel,
+    List<HomeCourseItem> relatedCourses,
+  )
+  onCourseTap;
 
   @override
   Widget build(BuildContext context) {
@@ -235,9 +283,16 @@ class _HomeSections extends StatelessWidget {
               itemCount: data.purchased.length,
               separatorBuilder: (context, index) => const SizedBox(width: 14),
               itemBuilder: (context, index) {
+                final visual = _cardVisualAt(index);
                 return _PurchasedCourseCard(
                   data: data.purchased[index],
-                  visual: _cardVisualAt(index),
+                  visual: visual,
+                  onTap: () => onCourseTap(
+                    data.purchased[index],
+                    visual,
+                    'Gói học đã mua',
+                    data.purchased,
+                  ),
                 );
               },
             ),
@@ -259,11 +314,18 @@ class _HomeSections extends StatelessWidget {
               itemCount: data.featured.length,
               separatorBuilder: (context, index) => const SizedBox(width: 14),
               itemBuilder: (context, index) {
+                final visual = _cardVisualAt(index);
                 return _ShowcaseCourseCard(
                   data: data.featured[index],
-                  visual: _cardVisualAt(index),
+                  visual: visual,
                   tag: 'Nổi bật',
                   badge: 'Top khóa học',
+                  onTap: () => onCourseTap(
+                    data.featured[index],
+                    visual,
+                    'Gói học nổi bật',
+                    data.featured,
+                  ),
                 );
               },
             ),
@@ -285,11 +347,18 @@ class _HomeSections extends StatelessWidget {
               itemCount: data.recent.length,
               separatorBuilder: (context, index) => const SizedBox(width: 14),
               itemBuilder: (context, index) {
+                final visual = _cardVisualAt(index + 1);
                 return _ShowcaseCourseCard(
                   data: data.recent[index],
-                  visual: _cardVisualAt(index + 1),
+                  visual: visual,
                   tag: 'Đã xem',
                   badge: 'Xem gần đây',
+                  onTap: () => onCourseTap(
+                    data.recent[index],
+                    visual,
+                    'Gói học đã xem',
+                    data.recent,
+                  ),
                 );
               },
             ),
@@ -299,7 +368,7 @@ class _HomeSections extends StatelessWidget {
         ...data.categories.map(
           (section) => Padding(
             padding: const EdgeInsets.only(bottom: 30),
-            child: _CategorySection(section: section),
+            child: _CategorySection(section: section, onCourseTap: onCourseTap),
           ),
         ),
       ],
@@ -314,9 +383,7 @@ class _HomeDrawer extends StatelessWidget {
     final navigator = Navigator.of(context);
     navigator.pop();
     await navigator.push(
-      MaterialPageRoute<void>(
-        builder: (_) => const AccountProfileView(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const AccountProfileView()),
     );
   }
 
@@ -328,10 +395,44 @@ class _HomeDrawer extends StatelessWidget {
     }
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => const SignInView(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const SignInView()),
     );
+  }
+
+  Future<void> _openDrawerDestination(
+    BuildContext context,
+    HomeDrawerItemData item,
+  ) async {
+    final title = item.title.trim().toLowerCase();
+
+    if (title == 'sat' || title == 'sat/act' || title.contains('sat')) {
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      await navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const SatPackagesView()),
+      );
+      return;
+    }
+
+    if (title == 'ielts' || title.contains('ielts')) {
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      await navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const IeltsPackagesView()),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Mục "${item.title}" đang được build native trên app, tạm thời chưa mở.',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -372,15 +473,15 @@ class _HomeDrawer extends StatelessWidget {
                 title: Text(
                   'Trang cá nhân',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: HomePalette.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: HomePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 subtitle: Text(
                   'Cập nhật thông tin tài khoản',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: HomePalette.textSecondary,
-                      ),
+                    color: HomePalette.textSecondary,
+                  ),
                 ),
                 trailing: const Icon(
                   Icons.chevron_right_rounded,
@@ -405,11 +506,12 @@ class _HomeDrawer extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final item = HomeContent.drawerItems[index];
                     return ListTile(
-                      onTap: () => Navigator.of(context).pop(),
+                      onTap: () => _openDrawerDestination(context, item),
                       leading: Icon(item.icon, color: HomePalette.primary),
                       title: Text(
                         item.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: HomePalette.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -460,6 +562,8 @@ class _DrawerProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = AuthRepository.instance.currentUser;
+    final balance = user?.balance;
+    final currencyFormat = NumberFormat.decimalPattern('vi_VN');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -495,8 +599,8 @@ class _DrawerProfileCard extends StatelessWidget {
                 Text(
                   user == null ? 'Chào bạn' : 'Xin chào',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: HomePalette.textMuted,
-                      ),
+                    color: HomePalette.textMuted,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -504,62 +608,52 @@ class _DrawerProfileCard extends StatelessWidget {
                       ? user!.name
                       : 'Khám phá khóa học Edly',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: HomePalette.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: HomePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   user?.subtitle ?? 'Đăng nhập để đồng bộ tiến độ học tập',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: HomePalette.textSecondary,
+                    color: HomePalette.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: HomePalette.chipGreen,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 16,
+                        color: HomePalette.secondary,
                       ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          balance == null
+                              ? 'Số dư đang cập nhật'
+                              : 'Số dư: ${currencyFormat.format(balance)}đ',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: HomePalette.secondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopNotice extends StatelessWidget {
-  const _TopNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Text(
-              'PRO',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Trang chủ mobile đang lấy dữ liệu thật từ web để đồng bộ các gói học.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: HomePalette.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
             ),
           ),
         ],
@@ -647,7 +741,8 @@ class _HeroSlideCard extends StatelessWidget {
                       data.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             height: 1.12,
@@ -659,9 +754,9 @@ class _HeroSlideCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            height: 1.45,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.9),
+                        height: 1.45,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     FilledButton(
@@ -764,7 +859,8 @@ class _SectionHeader extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w800,
                             color: HomePalette.textPrimary,
                             fontSize: 28,
@@ -777,8 +873,8 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: HomePalette.textSecondary,
-                    ),
+                  color: HomePalette.textSecondary,
+                ),
               ),
             ],
           ),
@@ -792,90 +888,100 @@ class _PurchasedCourseCard extends StatelessWidget {
   const _PurchasedCourseCard({
     required this.data,
     required this.visual,
+    required this.onTap,
   });
 
   final HomeCourseItem data;
   final _CardVisual visual;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final progress = ((data.progress ?? 0).clamp(0, 100)) / 100;
 
-    return Container(
-      width: 296,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: HomePalette.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: HomePalette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _CourseThumbnail(
-            imageUrl: data.thumbnailUrl,
-            height: 142,
-            visual: visual,
-            badge: data.category ?? 'Đã mua',
-            badgeColor: visual.accentColor,
-            footerLabel: data.totalLessons != null
-                ? '${data.totalLessons} học phần'
-                : null,
-            footerIcon: Icons.play_circle_fill_rounded,
+        child: Container(
+          width: 296,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: HomePalette.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: HomePalette.border),
           ),
-          const SizedBox(height: 14),
-          Text(
-            data.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CourseThumbnail(
+                imageUrl: data.thumbnailUrl,
+                height: 142,
+                visual: visual,
+                badge: data.category ?? 'Đã mua',
+                badgeColor: visual.accentColor,
+                footerLabel: data.totalLessons != null
+                    ? '${data.totalLessons} học phần'
+                    : null,
+                footerIcon: Icons.play_circle_fill_rounded,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                data.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: HomePalette.textPrimary,
                   fontWeight: FontWeight.w800,
                   height: 1.3,
                 ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            data.shortDescription,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              ),
+              const SizedBox(height: 6),
+              Text(
+                data.shortDescription,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: HomePalette.textSecondary,
                   height: 1.35,
                 ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              Text(
-                'Progress: ${((data.progress ?? 0).clamp(0, 100))}%',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Text(
+                    'Progress: ${((data.progress ?? 0).clamp(0, 100))}%',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: HomePalette.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
-              ),
-              const Spacer(),
-              if (data.completedLessons != null && data.totalLessons != null)
-                Text(
-                  '${data.completedLessons}/${data.totalLessons}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  ),
+                  const Spacer(),
+                  if (data.completedLessons != null &&
+                      data.totalLessons != null)
+                    Text(
+                      '${data.completedLessons}/${data.totalLessons}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: HomePalette.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: HomePalette.border,
+                  valueColor: AlwaysStoppedAnimation<Color>(visual.accentColor),
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: HomePalette.border,
-              valueColor: AlwaysStoppedAnimation<Color>(visual.accentColor),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -887,92 +993,108 @@ class _ShowcaseCourseCard extends StatelessWidget {
     required this.visual,
     required this.tag,
     required this.badge,
+    required this.onTap,
   });
 
   final HomeCourseItem data;
   final _CardVisual visual;
   final String tag;
   final String badge;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 246,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: HomePalette.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: HomePalette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _CourseThumbnail(
-            imageUrl: data.thumbnailUrl,
-            height: 148,
-            visual: visual,
-            badge: tag,
-            badgeColor: visual.accentColor,
-            footerIcon: Icons.arrow_outward_rounded,
+        child: Container(
+          width: 246,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: HomePalette.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: HomePalette.border),
           ),
-          const SizedBox(height: 14),
-          Text(
-            data.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CourseThumbnail(
+                imageUrl: data.thumbnailUrl,
+                height: 148,
+                visual: visual,
+                badge: tag,
+                badgeColor: visual.accentColor,
+                footerIcon: Icons.arrow_outward_rounded,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                data.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: HomePalette.textPrimary,
                   fontWeight: FontWeight.w800,
                   height: 1.35,
                 ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            data.shortDescription,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              ),
+              const SizedBox(height: 8),
+              Text(
+                data.shortDescription,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: HomePalette.textSecondary,
                   height: 1.4,
                 ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: visual.accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Icon(
-                  Icons.workspace_premium_rounded,
-                  color: visual.accentColor,
-                ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  badge,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              const Spacer(),
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: visual.accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Icon(
+                      Icons.workspace_premium_rounded,
+                      color: visual.accentColor,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      badge,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: HomePalette.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _CategorySection extends StatelessWidget {
-  const _CategorySection({required this.section});
+  const _CategorySection({required this.section, required this.onCourseTap});
 
   final HomeCategorySection section;
+  final void Function(
+    HomeCourseItem course,
+    _CardVisual visual,
+    String sourceLabel,
+    List<HomeCourseItem> relatedCourses,
+  )
+  onCourseTap;
 
   @override
   Widget build(BuildContext context) {
@@ -993,11 +1115,18 @@ class _CategorySection extends StatelessWidget {
             itemCount: section.courses.length,
             separatorBuilder: (context, index) => const SizedBox(width: 14),
             itemBuilder: (context, index) {
+              final visual = _cardVisualAt(index + 2);
               return _ShowcaseCourseCard(
                 data: section.courses[index],
-                visual: _cardVisualAt(index + 2),
+                visual: visual,
                 tag: section.title,
                 badge: 'Khám phá ngay',
+                onTap: () => onCourseTap(
+                  section.courses[index],
+                  visual,
+                  'Khóa học ${section.title}',
+                  section.courses,
+                ),
               );
             },
           ),
@@ -1064,7 +1193,10 @@ class _CourseThumbnail extends StatelessWidget {
               top: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(999),
@@ -1126,10 +1258,7 @@ class _CourseThumbnail extends StatelessWidget {
 }
 
 class _HomeErrorState extends StatelessWidget {
-  const _HomeErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _HomeErrorState({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;
@@ -1156,9 +1285,9 @@ class _HomeErrorState extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: HomePalette.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: HomePalette.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 14),
           FilledButton(
@@ -1187,19 +1316,16 @@ class _HomeEmptyState extends StatelessWidget {
       child: Text(
         'Chưa có dữ liệu gói học để hiển thị trên trang chủ.',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: HomePalette.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+          color: HomePalette.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
 class _CardVisual {
-  const _CardVisual({
-    required this.gradient,
-    required this.accentColor,
-  });
+  const _CardVisual({required this.gradient, required this.accentColor});
 
   final List<Color> gradient;
   final Color accentColor;

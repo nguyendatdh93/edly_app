@@ -22,5 +22,23 @@ class ApiConfig {
   static String get deviceName =>
       'edly-mobile-app-${FlavorConfig.instance.flavor.name}';
 
+  static String get webBaseUrl {
+    final apiUrl = Uri.parse(baseUrl);
+    final pathSegments = List<String>.from(apiUrl.pathSegments);
+
+    if (pathSegments.isNotEmpty && pathSegments.last == 'api') {
+      pathSegments.removeLast();
+    }
+
+    final normalizedPath = pathSegments.isEmpty
+        ? ''
+        : '/${pathSegments.join('/')}';
+
+    final resolved = apiUrl.replace(path: normalizedPath).toString();
+    return resolved.endsWith('/')
+        ? resolved.substring(0, resolved.length - 1)
+        : resolved;
+  }
+
   const ApiConfig._();
 }

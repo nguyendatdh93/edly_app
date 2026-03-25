@@ -19,6 +19,10 @@ dependencies:
   json_annotation: ^4.9.0
   flutter_secure_storage: ^10.0.0
   intl: ^0.20.2
+  url_launcher: ^6.3.2
+  xml: ^6.5.0
+  video_player: ^2.10.0
+  webview_flutter: ^4.13.0
 
 dev_dependencies:
   flutter_test:
