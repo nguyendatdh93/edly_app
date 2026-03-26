@@ -609,10 +609,12 @@ class CourseDetailLearningItem {
     this.metaLabel,
     this.mediaMime,
     this.mediaUrl,
+    this.mediaStreamingUrl,
+    this.mediaHlsUrl,
     this.mediaDocumentUrl,
     this.mediaPptxUrl,
     this.subtitlePath,
-    this.subtitlePaths = const [],
+    this.subtitleTracks = const [],
   });
 
   final String id;
@@ -634,32 +636,109 @@ class CourseDetailLearningItem {
   final String? metaLabel;
   final String? mediaMime;
   final String? mediaUrl;
+  final String? mediaStreamingUrl;
+  final String? mediaHlsUrl;
   final String? mediaDocumentUrl;
   final String? mediaPptxUrl;
   final String? subtitlePath;
-  final List<String> subtitlePaths;
+  final List<CourseDetailSubtitleTrack> subtitleTracks;
 
   bool get isQuiz => contentType == 'quiz';
   bool get isLecture => contentType == 'lecture';
   bool get isDraft => status.toLowerCase() == 'draft';
   bool get isExamMode => isQuiz && (minute ?? 0) > 0;
+
+  String get _normalizedMime => (mediaMime ?? '').trim().toLowerCase();
+
+  bool _urlHasAnyExtension(List<String> extensions) {
+    final raw = preferredContentUrl?.trim();
+    if (raw == null || raw.isEmpty) {
+      return false;
+    }
+    final path = (Uri.tryParse(raw)?.path ?? raw).toLowerCase();
+    return extensions.any((extension) => path.endsWith(extension));
+  }
+
   bool get isPdfLike {
-    final mime = (mediaMime ?? '').toLowerCase();
-    return mime == 'pdf' || mime == 'application/pdf';
+    final mime = _normalizedMime;
+    return mime == 'pdf' ||
+        mime == 'application/pdf' ||
+        mime.endsWith('/pdf') ||
+        _urlHasAnyExtension(const ['.pdf']);
   }
 
   bool get isPptLike {
-    final mime = (mediaMime ?? '').toLowerCase();
-    return mime == 'ppt' || mime == 'pptx';
+    final mime = _normalizedMime;
+    return mime == 'ppt' ||
+        mime == 'pptx' ||
+        mime.contains('powerpoint') ||
+        mime.contains('presentation') ||
+        _urlHasAnyExtension(const ['.ppt', '.pptx']);
+  }
+
+  bool get isDocLike {
+    final mime = _normalizedMime;
+    return mime == 'doc' ||
+        mime == 'docx' ||
+        mime.contains('application/msword') ||
+        mime.contains('officedocument.wordprocessingml.document') ||
+        _urlHasAnyExtension(const ['.doc', '.docx']);
+  }
+
+  bool get isImageLike {
+    final mime = _normalizedMime;
+    return mime == 'image' ||
+        mime.startsWith('image/') ||
+        _urlHasAnyExtension(const [
+          '.png',
+          '.jpg',
+          '.jpeg',
+          '.gif',
+          '.webp',
+          '.bmp',
+          '.svg',
+        ]);
   }
 
   bool get isVideoLike {
-    final mime = (mediaMime ?? '').toLowerCase();
-    return mime.startsWith('video') || mime == 'video' || iconKey == 'video';
+    final mime = _normalizedMime;
+    return mime.startsWith('video') ||
+        mime == 'video' ||
+        iconKey == 'video' ||
+        _urlHasAnyExtension(const ['.mp4', '.mov', '.m4v', '.webm', '.m3u8']);
   }
 
+  bool get looksLikeDocumentByMeta {
+    final icon = iconKey.trim().toLowerCase();
+    final type = typeLabel.trim().toLowerCase();
+    return icon == 'document' ||
+        icon == 'image' ||
+        icon == 'slides' ||
+        type.contains('pdf') ||
+        type.contains('doc') ||
+        type.contains('slide') ||
+        type.contains('tài liệu') ||
+        type.contains('hình ảnh') ||
+        type.contains('image');
+  }
+
+  bool get prefersDocumentLikeViewer =>
+      isPdfLike ||
+      isDocLike ||
+      isPptLike ||
+      isImageLike ||
+      looksLikeDocumentByMeta;
+
+  bool get prefersLandscapeViewer => isVideoLike || prefersDocumentLikeViewer;
+
   String? get preferredContentUrl {
-    final candidates = [mediaUrl, mediaDocumentUrl, mediaPptxUrl];
+    final candidates = [
+      mediaHlsUrl,
+      mediaStreamingUrl,
+      mediaUrl,
+      mediaDocumentUrl,
+      mediaPptxUrl,
+    ];
     for (final raw in candidates) {
       final url = raw?.trim();
       if (url != null && url.isNotEmpty) {
@@ -675,28 +754,41 @@ class CourseDetailLearningItem {
   }) {
     final media = json['media'];
     final mediaMap = _asMap(media);
-    final mime = media is Map ? _asStr(media['mime']) : '';
+    final hlsMap = _asMap(mediaMap['hls']);
+    final mime = media is Map ? _asStr(media['mime']).toLowerCase() : '';
 
     final String iconKey;
     final String toneKey;
     final String typeLabel;
 
-    if (mime == 'video' || mime == 'video/mp4') {
+    if (mime == 'video' || mime.startsWith('video/')) {
       iconKey = 'video';
       toneKey = 'info';
       typeLabel = 'Video';
-    } else if (mime == 'pdf' || mime == 'application/pdf') {
+    } else if (mime == 'pdf' ||
+        mime == 'application/pdf' ||
+        mime.endsWith('/pdf')) {
       iconKey = 'document';
       toneKey = 'danger';
       typeLabel = 'PDF';
-    } else if (mime == 'pptx' || mime == 'ppt') {
+    } else if (mime == 'pptx' ||
+        mime == 'ppt' ||
+        mime.contains('powerpoint') ||
+        mime.contains('presentation')) {
       iconKey = 'slides';
       toneKey = 'warning';
       typeLabel = 'Slide';
-    } else if (mime == 'docx' || mime == 'doc') {
+    } else if (mime == 'docx' ||
+        mime == 'doc' ||
+        mime.contains('application/msword') ||
+        mime.contains('officedocument.wordprocessingml.document')) {
       iconKey = 'document';
       toneKey = 'info';
       typeLabel = 'Tài liệu';
+    } else if (mime == 'image' || mime.startsWith('image/')) {
+      iconKey = 'image';
+      toneKey = 'info';
+      typeLabel = 'Hình ảnh';
     } else {
       iconKey = 'lessons';
       toneKey = 'success';
@@ -708,12 +800,12 @@ class CourseDetailLearningItem {
     final price = _asInt(json['price']);
     final status = _asStr(json['status']);
     final subtitlePathsRaw = json['subtitle_paths'];
-    final subtitlePaths = subtitlePathsRaw is List
+    final subtitleTracks = subtitlePathsRaw is List
         ? subtitlePathsRaw
-              .map((item) => _asStr(item))
-              .where((item) => item.isNotEmpty)
+              .map(CourseDetailSubtitleTrack.fromJson)
+              .where((item) => item.path.isNotEmpty)
               .toList()
-        : <String>[];
+        : <CourseDetailSubtitleTrack>[];
 
     return CourseDetailLearningItem(
       id: _asStr(json['id']),
@@ -733,17 +825,17 @@ class CourseDetailLearningItem {
       slug: _asNullableStr(json['slug']),
       badgeLabel: badgeLabel,
       mediaMime: mime.isNotEmpty ? mime : _asNullableStr(mediaMap['mime']),
-      mediaUrl: _normalizeAssetUrl(
-        _asNullableStr(json['media_url']) ??
-            _asNullableStr(mediaMap['url']) ??
-            _asNullableStr(mediaMap['path']),
+      mediaUrl: _normalizeAssetUrl(_asNullableStr(json['media_url'])),
+      mediaStreamingUrl: _normalizeDirectMediaUrl(
+        _asNullableStr(mediaMap['url']) ?? _asNullableStr(mediaMap['path']),
       ),
+      mediaHlsUrl: _normalizeDirectMediaUrl(_asNullableStr(hlsMap['master'])),
       mediaDocumentUrl: _normalizeAssetUrl(
         _asNullableStr(json['media_url_document']),
       ),
       mediaPptxUrl: _normalizeAssetUrl(_asNullableStr(json['media_url_pptx'])),
-      subtitlePath: _asNullableStr(json['subtitle_path']),
-      subtitlePaths: subtitlePaths,
+      subtitlePath: _normalizeAssetUrl(_asNullableStr(json['subtitle_path'])),
+      subtitleTracks: subtitleTracks,
     );
   }
 
@@ -818,11 +910,66 @@ class CourseDetailLearningItem {
       metaLabel: metaLabel,
       mediaMime: mediaMime,
       mediaUrl: mediaUrl,
+      mediaStreamingUrl: mediaStreamingUrl,
+      mediaHlsUrl: mediaHlsUrl,
       mediaDocumentUrl: mediaDocumentUrl,
       mediaPptxUrl: mediaPptxUrl,
       subtitlePath: subtitlePath,
-      subtitlePaths: subtitlePaths,
+      subtitleTracks: subtitleTracks,
     );
+  }
+}
+
+class CourseDetailSubtitleTrack {
+  const CourseDetailSubtitleTrack({
+    required this.path,
+    this.language,
+    this.s3Path,
+  });
+
+  final String path;
+  final String? language;
+  final String? s3Path;
+
+  String get normalizedLanguage => (language ?? '').trim().toLowerCase();
+
+  String get shortLabel {
+    switch (normalizedLanguage) {
+      case 'vi':
+        return 'VI';
+      case 'en':
+        return 'EN';
+      default:
+        return 'SUB';
+    }
+  }
+
+  String get longLabel {
+    switch (normalizedLanguage) {
+      case 'vi':
+        return 'Tiếng Việt';
+      case 'en':
+        return 'Tiếng Anh';
+      default:
+        return 'Phụ đề';
+    }
+  }
+
+  static CourseDetailSubtitleTrack fromJson(dynamic raw) {
+    if (raw is Map) {
+      final map = raw.map((key, value) => MapEntry(key.toString(), value));
+      return CourseDetailSubtitleTrack(
+        path: _normalizeAssetUrl(_asNullableStr(map['path'])) ?? '',
+        language: _asNullableStr(map['language']),
+        s3Path: _asNullableStr(map['s3_path']),
+      );
+    }
+
+    if (raw is String) {
+      return CourseDetailSubtitleTrack(path: _normalizeAssetUrl(raw) ?? raw);
+    }
+
+    return const CourseDetailSubtitleTrack(path: '');
   }
 }
 
@@ -831,14 +978,48 @@ class CourseDetailResolvedContent {
     required this.uri,
     required this.kind,
     this.fallbackPageUri,
+    this.subtitleTracks = const [],
   });
 
   final Uri uri;
   final String kind;
   final Uri? fallbackPageUri;
+  final List<CourseDetailSubtitleTrack> subtitleTracks;
 
   bool get isVideo => kind == 'video';
   bool get isWebView => !isVideo;
+}
+
+class CourseLectureProgressStatus {
+  const CourseLectureProgressStatus({
+    required this.isCompleted,
+    required this.watchedSeconds,
+  });
+
+  final bool isCompleted;
+  final int watchedSeconds;
+
+  static const empty = CourseLectureProgressStatus(
+    isCompleted: false,
+    watchedSeconds: 0,
+  );
+
+  factory CourseLectureProgressStatus.fromJson(Map<String, dynamic> json) {
+    return CourseLectureProgressStatus(
+      isCompleted: json['is_completed'] == true,
+      watchedSeconds: _asInt(json['watched_seconds']),
+    );
+  }
+
+  CourseLectureProgressStatus copyWith({
+    bool? isCompleted,
+    int? watchedSeconds,
+  }) {
+    return CourseLectureProgressStatus(
+      isCompleted: isCompleted ?? this.isCompleted,
+      watchedSeconds: watchedSeconds ?? this.watchedSeconds,
+    );
+  }
 }
 
 class BalancePurchaseResult {
@@ -919,6 +1100,27 @@ String? _normalizeAssetUrl(String? value) {
   }
 
   return raw;
+}
+
+String? _normalizeDirectMediaUrl(String? value) {
+  if (value == null) {
+    return null;
+  }
+
+  final raw = value.trim();
+  if (raw.isEmpty) {
+    return null;
+  }
+
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw;
+  }
+
+  if (raw.startsWith('//')) {
+    return 'https:$raw';
+  }
+
+  return null;
 }
 
 List<String> _readStringList(dynamic value) {

@@ -150,6 +150,7 @@ class QuizDetailRepository {
           'course_id': courseId,
           'answers': answers,
           'module_times': moduleTimes ?? <String, dynamic>{},
+          'source': 'app',
           if (room.isExam) 'is_single_module': isSingleModule,
           if (room.isExam) 'selected_module': selectedModule,
         },

@@ -18,9 +18,9 @@ class CourseDetailPalette {
 class CourseDetailCopy {
   static const String endpointTemplate = '/mobile/course-detail/{slug}_{id}';
   static const String loadingMessage =
-      'Đang tải nội dung khóa học từ API mobile.';
+      'Đang tải nội dung khóa học.';
   static const String fallbackMessage =
-      'Đang tạm dùng dữ liệu từ trang chủ trong lúc chờ section và đề thi trả về.';
+      '';
   static const String genericErrorMessage =
       'Không thể tải nội dung khóa học.';
 

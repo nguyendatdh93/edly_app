@@ -207,8 +207,12 @@ class _CourseDetailViewState extends State<CourseDetailView> {
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            CourseDetailLectureView(item: item, courseSlug: data.courseSlug),
+        builder: (_) => CourseDetailLectureView(
+          initialItem: item,
+          courseSlug: data.courseSlug,
+          courseTitle: data.hero.title,
+          sections: data.sections,
+        ),
       ),
     );
     if (mounted) {

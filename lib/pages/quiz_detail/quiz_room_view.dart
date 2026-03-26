@@ -11,6 +11,7 @@ import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
 import 'package:edly/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xml/xml.dart' as xml;
 
 class QuizRoomView extends StatefulWidget {
@@ -249,7 +250,9 @@ class _QuizRoomViewState extends State<QuizRoomView> {
       _breakRemainingSeconds = 10 * 60;
     }
     _breakTimer?.cancel();
-    setState(() {});
+    setState(() {
+      _showModuleReview = false;
+    });
 
     _breakTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted || _breakRemainingSeconds == null) {
@@ -287,6 +290,7 @@ class _QuizRoomViewState extends State<QuizRoomView> {
           ? mathIndex
           : (_activeModuleIndex + 1).clamp(0, _modules.length - 1);
       _currentQuestionIndex = 0;
+      _showModuleReview = false;
       _remainingSeconds = null;
     });
     _setupTimerForActiveModule();
@@ -1657,6 +1661,16 @@ class _QuizRoomViewState extends State<QuizRoomView> {
     required TextStyle style,
     QuizOption? option,
   }) {
+    if (_shouldUseHtmlRenderer(question, raw, option: option)) {
+      return _RichQuestionHtmlView(
+        html: _renderRichHtml(question, raw, option: option),
+        textStyle: style,
+        maxImageHeight: option == null ? 180 : 120,
+        interactive: false,
+        inline: option != null,
+      );
+    }
+
     final chunks = _tokenizeContent(raw, question, option: option);
     if (chunks.isEmpty) {
       final text = _renderText(raw);
@@ -1718,6 +1732,241 @@ class _QuizRoomViewState extends State<QuizRoomView> {
         return Text(text, style: style);
       }).toList(),
     );
+  }
+
+  bool _shouldUseHtmlRenderer(
+    QuizQuestion question,
+    String raw, {
+    QuizOption? option,
+  }) {
+    final content = raw.trim().toLowerCase();
+    if (content.isEmpty) {
+      return false;
+    }
+
+    if (content.contains('<math') ||
+        content.contains('[math:') ||
+        content.contains('[image:') ||
+        content.contains('<table') ||
+        content.contains('[*')) {
+      return true;
+    }
+
+    if (option != null) {
+      return option.maths.isNotEmpty || option.images.isNotEmpty;
+    }
+
+    return question.maths.isNotEmpty || question.images.isNotEmpty;
+  }
+
+  String _renderRichHtml(
+    QuizQuestion question,
+    String raw, {
+    QuizOption? option,
+  }) {
+    if (raw.trim().isEmpty) {
+      return '';
+    }
+
+    var html = _convertTextTableToHtml(raw);
+    final maths = <QuizMathAsset>[...question.maths, ...?option?.maths];
+    final images = <QuizImageAsset>[...question.images, ...?option?.images];
+
+    for (final mathAsset in maths) {
+      final placeholder = '[Math:${mathAsset.id}]';
+      final rendered = mathAsset.mathml.trim().isNotEmpty
+          ? '<span class="math-placeholder" data-math-id="${mathAsset.id}">${mathAsset.mathml}</span>'
+          : '<span class="math-fallback">${_renderMathAsText(mathAsset)}</span>';
+      html = html.replaceAll(placeholder, rendered);
+    }
+
+    for (final image in images) {
+      final placeholder = '[Image:${image.id}]';
+      final url = _normalizeAssetUrl(image.path);
+      final rendered =
+          '<div class="image-block"><img src="$url" data-image-id="${image.id}" alt="question image" /></div>';
+      html = html.replaceAll(placeholder, rendered);
+    }
+
+    if (!html.toLowerCase().contains('<math')) {
+      final missingMath = maths
+          .where((item) => item.mathml.trim().isNotEmpty)
+          .where((item) => !html.contains('data-math-id="${item.id}"'))
+          .map(
+            (item) =>
+                '<div class="math-block" data-math-id="${item.id}">${item.mathml}</div>',
+          )
+          .join();
+      if (missingMath.isNotEmpty) {
+        html = '$html<div class="math-stack">$missingMath</div>';
+      }
+    }
+
+    if (!html.toLowerCase().contains('<img')) {
+      final missingImages = images
+          .where((item) => item.path.trim().isNotEmpty)
+          .map(
+            (item) =>
+                '<div class="image-block"><img src="${_normalizeAssetUrl(item.path)}" data-image-id="${item.id}" alt="question image" /></div>',
+          )
+          .join();
+      if (missingImages.isNotEmpty) {
+        html = '$html<div class="image-stack">$missingImages</div>';
+      }
+    }
+
+    return _sanitizeRichHtml(_normalizeInlineHtmlSources(html));
+  }
+
+  String _convertTextTableToHtml(String text) {
+    if (text.isEmpty) {
+      return text;
+    }
+
+    final protected = _protectPlaceholders(text);
+    final protectedText = protected.protectedText;
+    final rows = <({int start, int end, List<String> cells})>[];
+    final rowRegExp = RegExp(r'\[\*\s*([^*]+?)\s*\*\]');
+
+    bool isBlank(String value) {
+      return value.replaceAll(
+            RegExp(
+              r'^(?:\s|<br[^>]*>|\n|<\/?(?:p|div)[^>]*>)*$',
+              caseSensitive: false,
+            ),
+            '',
+          ) ==
+          '';
+    }
+
+    for (final match in rowRegExp.allMatches(protectedText)) {
+      rows.add((
+        start: match.start,
+        end: match.end,
+        cells: (match.group(1) ?? '')
+            .split('|')
+            .map((cell) => cell.trim().isEmpty ? ' ' : cell.trim())
+            .toList(),
+      ));
+    }
+
+    if (rows.isEmpty) {
+      return _restorePlaceholders(protectedText, protected.saved);
+    }
+
+    final groups = <({int start, int end, List<List<String>> rows})>[];
+    ({int start, int end, List<List<String>> rows})? current;
+
+    for (final row in rows) {
+      if (current == null) {
+        current = (start: row.start, end: row.end, rows: [row.cells]);
+        groups.add(current);
+        continue;
+      }
+
+      final gap = protectedText.substring(current.end, row.start);
+      if (isBlank(gap)) {
+        current = (
+          start: current.start,
+          end: row.end,
+          rows: [...current.rows, row.cells],
+        );
+        groups[groups.length - 1] = current;
+      } else {
+        current = (start: row.start, end: row.end, rows: [row.cells]);
+        groups.add(current);
+      }
+    }
+
+    var output = protectedText;
+    for (var index = groups.length - 1; index >= 0; index--) {
+      final group = groups[index];
+      final rowsHtml = StringBuffer();
+      for (var rowIndex = 0; rowIndex < group.rows.length; rowIndex++) {
+        final row = group.rows[rowIndex];
+        final isHeader = rowIndex == 0;
+        final tag = isHeader ? 'th' : 'td';
+        final style = isHeader
+            ? 'border:1px solid #cbd5e1;padding:8px;background:#f8fafc;font-weight:700;'
+            : 'border:1px solid #cbd5e1;padding:8px;';
+        rowsHtml.write(
+          '<tr>${row.map((cell) => '<$tag style="$style">$cell</$tag>').join()}</tr>',
+        );
+      }
+      final tableHtml = '<table class="text-table">$rowsHtml</table>';
+      output =
+          '${output.substring(0, group.start)}$tableHtml${output.substring(group.end)}';
+    }
+
+    return _restorePlaceholders(output, protected.saved);
+  }
+
+  ({String protectedText, List<String> saved}) _protectPlaceholders(
+    String text,
+  ) {
+    final saved = <String>[];
+    final protectedText = text.replaceAllMapped(
+      RegExp(r'\[(?:Math|Image):[^\]]+\]', caseSensitive: false),
+      (match) {
+        final index = saved.length;
+        saved.add(match.group(0)!);
+        return '__PH_${index}__';
+      },
+    );
+    return (protectedText: protectedText, saved: saved);
+  }
+
+  String _restorePlaceholders(String text, List<String> saved) {
+    return text.replaceAllMapped(RegExp(r'__PH_(\d+)__'), (match) {
+      final index = int.tryParse(match.group(1) ?? '') ?? -1;
+      if (index < 0 || index >= saved.length) {
+        return match.group(0)!;
+      }
+      return saved[index];
+    });
+  }
+
+  String _normalizeInlineHtmlSources(String html) {
+    return html.replaceAllMapped(
+      RegExp(r'''src=(["'])(.*?)\1''', caseSensitive: false),
+      (match) {
+        final quote = match.group(1) ?? '"';
+        final src = match.group(2) ?? '';
+        final normalized = _normalizeAssetUrl(src);
+        return 'src=$quote$normalized$quote';
+      },
+    );
+  }
+
+  String _sanitizeRichHtml(String html) {
+    if (html.trim().isEmpty) {
+      return '';
+    }
+
+    var normalized = html;
+    normalized = normalized.replaceAll(
+      RegExp(
+        r'<span\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*/?>)*</span>',
+        caseSensitive: false,
+      ),
+      '',
+    );
+    normalized = normalized.replaceAll(
+      RegExp(
+        r'<(?:p|div)\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*/?>)*</(?:p|div)>',
+        caseSensitive: false,
+      ),
+      '',
+    );
+    normalized = normalized.replaceAll(
+      RegExp(r'(?:<br\s*/?>\s*){3,}', caseSensitive: false),
+      '<br>',
+    );
+    normalized = normalized.replaceAll(
+      RegExp(r'>\s+<', caseSensitive: false),
+      '><',
+    );
+    return normalized.trim();
   }
 
   List<_ContentChunk> _tokenizeContent(
@@ -2231,6 +2480,347 @@ class _TopAction extends StatelessWidget {
   }
 }
 
+class _RichQuestionHtmlView extends StatefulWidget {
+  const _RichQuestionHtmlView({
+    required this.html,
+    required this.textStyle,
+    required this.maxImageHeight,
+    required this.interactive,
+    required this.inline,
+  });
+
+  final String html;
+  final TextStyle textStyle;
+  final double maxImageHeight;
+  final bool interactive;
+  final bool inline;
+
+  @override
+  State<_RichQuestionHtmlView> createState() => _RichQuestionHtmlViewState();
+}
+
+class _RichQuestionHtmlViewState extends State<_RichQuestionHtmlView> {
+  late final WebViewController _controller;
+  double _height = 80;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.transparent)
+      ..addJavaScriptChannel(
+        'HeightObserver',
+        onMessageReceived: (message) {
+          final nextHeight = double.tryParse(message.message);
+          if (nextHeight == null || nextHeight <= 0) {
+            return;
+          }
+          final normalized = nextHeight.clamp(40, 1200).toDouble();
+          if (!mounted || (normalized - _height).abs() < 1) {
+            return;
+          }
+          setState(() {
+            _height = normalized;
+          });
+        },
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (_) => NavigationDecision.prevent,
+          onPageFinished: (_) async {
+            await _remeasure();
+          },
+        ),
+      );
+    _loadHtml();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RichQuestionHtmlView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.html != widget.html ||
+        oldWidget.textStyle.fontSize != widget.textStyle.fontSize ||
+        oldWidget.maxImageHeight != widget.maxImageHeight) {
+      _loadHtml();
+    }
+  }
+
+  Future<void> _loadHtml() async {
+    final html = _buildHtmlDocument();
+    await _controller.loadHtmlString(html, baseUrl: ApiConfig.webBaseUrl);
+  }
+
+  Future<void> _remeasure() async {
+    try {
+      await _controller.runJavaScript('measureHeight();');
+      Future<void>.delayed(const Duration(milliseconds: 250), () {
+        _controller.runJavaScript('measureHeight();');
+      });
+      Future<void>.delayed(const Duration(milliseconds: 650), () {
+        _controller.runJavaScript('measureHeight();');
+      });
+    } catch (_) {}
+  }
+
+  String _buildHtmlDocument() {
+    final fontSize = widget.textStyle.fontSize ?? 16;
+    final lineHeight = widget.textStyle.height ?? 1.5;
+    final fontWeight = (widget.textStyle.fontWeight ?? FontWeight.w500).value;
+    final color = _cssColor(widget.textStyle.color ?? Colors.black);
+
+    final rootClass = widget.inline ? 'inline-root' : 'question-html';
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+    body {
+      color: $color;
+      font-size: ${fontSize}px;
+      line-height: $lineHeight;
+      font-weight: $fontWeight;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      ${widget.interactive ? '' : 'pointer-events: none; user-select: none;'}
+      word-break: normal;
+      overflow-wrap: anywhere;
+    }
+    * {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+    .question-html {
+      width: 100%;
+    }
+    .inline-root {
+      display: inline;
+      width: auto;
+      white-space: normal;
+    }
+    p, div, span, li, td, th {
+      font-size: inherit;
+      line-height: inherit;
+    }
+    .question-html p {
+      margin: 0 0 0.28em 0;
+    }
+    .question-html > p:last-child,
+    .question-html > div:last-child,
+    .question-html > figure:last-child {
+      margin-bottom: 0;
+    }
+    .question-html div,
+    .question-html figure,
+    .question-html span {
+      margin: 0;
+    }
+    .inline-root p,
+    .inline-root div,
+    .inline-root span {
+      display: inline;
+      margin: 0;
+    }
+    .inline-root br {
+      display: none;
+    }
+    .inline-root .math-inline {
+      display: inline;
+    }
+    .inline-root math,
+    .inline-root math * {
+      display: inline;
+    }
+    .question-html figure {
+      width: 100%;
+    }
+    .question-html p:empty,
+    .question-html div:empty,
+    .question-html span:empty {
+      display: none;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 8px auto;
+      max-height: ${widget.maxImageHeight}px;
+    }
+    .image-block, .math-block, .math-stack, .image-stack {
+      margin: 8px 0;
+    }
+    .image-block img,
+    .image-stack img {
+      margin: 0 auto;
+    }
+    .table-wrap,
+    figure.table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin: 8px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .text-table,
+    table {
+      width: auto;
+      min-width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      border: 1px solid #cbd5e1;
+      table-layout: auto;
+    }
+    .text-table td,
+    .text-table th,
+    table td,
+    table th {
+      border: 1px solid #cbd5e1;
+      padding: 8px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: normal;
+    }
+    .text-table th,
+    table th {
+      background: #f8fafc;
+    }
+    .question-html table p,
+    .question-html table div,
+    .question-html table figure {
+      margin: 0 !important;
+    }
+    .math-placeholder {
+      display: inline;
+      white-space: normal;
+    }
+    .math-placeholder > * {
+      display: inline !important;
+    }
+    mjx-container {
+      display: inline-block !important;
+      max-width: 100%;
+      overflow: visible;
+      margin: 0 0.06em;
+      vertical-align: middle;
+    }
+    mjx-container[display="true"] {
+      display: inline-block !important;
+      margin: 0 0.06em !important;
+    }
+    .question-html .math-block mjx-container,
+    .question-html .math-stack mjx-container {
+      display: inline-block !important;
+      margin: 0;
+    }
+  </style>
+  <script>
+    window.MathJax = {
+      options: {
+        renderActions: { addMenu: [] },
+      },
+      startup: {
+        typeset: false,
+      },
+    };
+    function measureHeight() {
+      const body = document.body;
+      const html = document.documentElement;
+      const height = Math.max(
+        body.scrollHeight,
+        body.offsetHeight,
+        html.clientHeight,
+        html.scrollHeight,
+        html.offsetHeight,
+      );
+      HeightObserver.postMessage(String(height));
+    }
+    function cleanupHtml() {
+      const root = document.querySelector('.question-html, .inline-root');
+      if (!root) {
+        return;
+      }
+
+      root.querySelectorAll('span, p, div').forEach((node) => {
+        if (node.querySelector('img, table, math, mjx-container, figure, svg')) {
+          return;
+        }
+        const text = (node.textContent || '').replace(/\\u00a0/g, '').trim();
+        if (!text) {
+          node.remove();
+        }
+      });
+
+      root.querySelectorAll('figure.table').forEach((figure) => {
+        figure.classList.add('table-wrap');
+      });
+
+      root.querySelectorAll('table').forEach((table) => {
+        if (table.parentElement && table.parentElement.classList.contains('table-wrap')) {
+          return;
+        }
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrap';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      });
+
+      root.querySelectorAll('p').forEach((paragraph) => {
+        if (paragraph.closest('table')) {
+          paragraph.style.margin = '0';
+        }
+      });
+      if (root.classList.contains('inline-root')) {
+        root.querySelectorAll('br').forEach((br) => br.remove());
+      }
+    }
+    window.addEventListener('load', async function () {
+      try {
+        cleanupHtml();
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          await window.MathJax.typesetPromise();
+        }
+      } catch (e) {}
+      cleanupHtml();
+      measureHeight();
+      setTimeout(measureHeight, 120);
+      setTimeout(measureHeight, 360);
+      setTimeout(measureHeight, 800);
+    });
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js"></script>
+</head>
+<body>
+  <div class="$rootClass">${widget.html}</div>
+</body>
+</html>
+''';
+  }
+
+  String _cssColor(Color color) {
+    return 'rgba(${(color.r * 255).round()}, ${(color.g * 255).round()}, ${(color.b * 255).round()}, ${color.a})';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _height,
+      width: double.infinity,
+      child: IgnorePointer(
+        ignoring: !widget.interactive,
+        child: WebViewWidget(controller: _controller),
+      ),
+    );
+  }
+}
+
 class _CalculatorDialog extends StatefulWidget {
   const _CalculatorDialog();
 
@@ -2305,6 +2895,78 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
     });
   }
 
+  void _clearEntry() {
+    setState(() {
+      _display = '0';
+      _replaceDisplay = false;
+    });
+  }
+
+  void _deleteLast() {
+    setState(() {
+      if (_replaceDisplay) {
+        _display = '0';
+        _replaceDisplay = false;
+        return;
+      }
+      if (_display.length <= 1 ||
+          (_display.length == 2 && _display.startsWith('-'))) {
+        _display = '0';
+        return;
+      }
+      _display = _display.substring(0, _display.length - 1);
+    });
+  }
+
+  void _toggleSign() {
+    setState(() {
+      if (_display == '0') {
+        return;
+      }
+      _display = _display.startsWith('-')
+          ? _display.substring(1)
+          : '-$_display';
+    });
+  }
+
+  void _applyPercent() {
+    final current = double.tryParse(_display) ?? 0;
+    setState(() {
+      _display = _format(current / 100);
+      _replaceDisplay = true;
+    });
+  }
+
+  void _setPi() {
+    setState(() {
+      _display = _format(math.pi);
+      _replaceDisplay = true;
+    });
+  }
+
+  void _applyUnary(String operation) {
+    final current = double.tryParse(_display) ?? 0;
+    double result = current;
+    switch (operation) {
+      case 'sqrt':
+        result = current < 0 ? 0 : math.sqrt(current);
+        break;
+      case 'square':
+        result = current * current;
+        break;
+      case 'inverse':
+        result = current == 0 ? 0 : 1 / current;
+        break;
+      default:
+        result = current;
+    }
+
+    setState(() {
+      _display = _format(result);
+      _replaceDisplay = true;
+    });
+  }
+
   double _apply(double left, double right, String op) {
     switch (op) {
       case '+':
@@ -2336,6 +2998,7 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
     required String label,
     required VoidCallback onTap,
     bool filled = false,
+    IconData? icon,
   }) {
     return FilledButton(
       onPressed: onTap,
@@ -2345,105 +3008,179 @@ class _CalculatorDialogState extends State<_CalculatorDialog> {
             ? QuizDetailPalette.primary
             : const Color(0xFFF1F5F9),
         foregroundColor: filled ? Colors.white : QuizDetailPalette.textPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        minimumSize: const Size(58, 42),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        minimumSize: const Size.fromHeight(30),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      child: icon != null
+          ? Icon(icon, size: 12)
+          : Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
+            ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final viewport = MediaQuery.sizeOf(context);
+    final compact = viewport.height < 720 || viewport.width < 420;
+    final tiny = viewport.height < 520 || viewport.width < 360;
+    final maxDialogWidth = viewport.width < 700
+        ? math.min(viewport.width * 0.88, 400.0)
+        : 460.0;
+    final maxDialogHeight = viewport.height * 0.76;
+    final historyLabel = _leftValue == null || _operator == null
+        ? ''
+        : '${_format(_leftValue!)} $_operator';
+
     return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      child: SizedBox(
-        width: 300,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 18,
+        vertical: compact ? 10 : 16,
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: maxDialogWidth,
+          maxHeight: maxDialogHeight,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 6 : 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Calculator',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: compact ? 14 : 16,
+                          color: QuizDetailPalette.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 6 : 10,
+                    vertical: compact ? 6 : 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: QuizDetailPalette.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        historyLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 10 : 12,
+                          color: QuizDetailPalette.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: compact ? 4 : 6),
+                      Text(
+                        _display,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 16 : 22,
+                          fontWeight: FontWeight.w800,
+                          color: QuizDetailPalette.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: compact ? 8 : 10),
+                GridView.count(
+                  crossAxisCount: 5,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: compact ? 3 : 5,
+                  crossAxisSpacing: compact ? 3 : 5,
+                  childAspectRatio: compact ? 1.42 : 1.22,
+                  children: [
+                    _button(label: 'C', onTap: _clear),
+                    _button(label: 'CE', onTap: _clearEntry),
+                    _button(
+                      label: '',
+                      icon: Icons.backspace_outlined,
+                      onTap: _deleteLast,
+                    ),
+                    _button(label: '±', onTap: _toggleSign),
+                    _button(label: '%', onTap: _applyPercent),
+                    _button(label: '7', onTap: () => _inputDigit('7')),
+                    _button(label: '8', onTap: () => _inputDigit('8')),
+                    _button(label: '9', onTap: () => _inputDigit('9')),
+                    _button(
+                      label: '÷',
+                      onTap: () => _setOperator('÷'),
+                      filled: true,
+                    ),
+                    _button(label: '√', onTap: () => _applyUnary('sqrt')),
+                    _button(label: '4', onTap: () => _inputDigit('4')),
+                    _button(label: '5', onTap: () => _inputDigit('5')),
+                    _button(label: '6', onTap: () => _inputDigit('6')),
+                    _button(
+                      label: '×',
+                      onTap: () => _setOperator('×'),
+                      filled: true,
+                    ),
+                    _button(label: 'x²', onTap: () => _applyUnary('square')),
+                    _button(label: '1', onTap: () => _inputDigit('1')),
+                    _button(label: '2', onTap: () => _inputDigit('2')),
+                    _button(label: '3', onTap: () => _inputDigit('3')),
+                    _button(
+                      label: '−',
+                      onTap: () => _setOperator('-'),
+                      filled: true,
+                    ),
+                    _button(label: '1/x', onTap: () => _applyUnary('inverse')),
+                    _button(label: '0', onTap: () => _inputDigit('0')),
+                    _button(label: '.', onTap: _inputDot),
+                    _button(label: 'π', onTap: _setPi),
+                    _button(
+                      label: '+',
+                      onTap: () => _setOperator('+'),
+                      filled: true,
+                    ),
+                    _button(label: '=', onTap: _equals, filled: true),
+                  ],
+                ),
+                if (!tiny) ...[
+                  SizedBox(height: compact ? 4 : 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
-                      'Calculator',
+                      'Hỗ trợ: +  −  ×  ÷  %, đổi dấu, căn bậc hai, bình phương, nghịch đảo, π',
                       style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: QuizDetailPalette.textPrimary,
+                        color: QuizDetailPalette.textSecondary,
+                        fontSize: compact ? 9 : 10,
+                        height: 1.3,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
                 ],
-              ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: QuizDetailPalette.border),
-                ),
-                alignment: Alignment.centerRight,
-                child: Text(
-                  _display,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: QuizDetailPalette.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _button(label: 'C', onTap: _clear),
-                  _button(
-                    label: '÷',
-                    onTap: () => _setOperator('÷'),
-                    filled: true,
-                  ),
-                  _button(
-                    label: '×',
-                    onTap: () => _setOperator('×'),
-                    filled: true,
-                  ),
-                  _button(
-                    label: '−',
-                    onTap: () => _setOperator('-'),
-                    filled: true,
-                  ),
-                  _button(label: '7', onTap: () => _inputDigit('7')),
-                  _button(label: '8', onTap: () => _inputDigit('8')),
-                  _button(label: '9', onTap: () => _inputDigit('9')),
-                  _button(
-                    label: '+',
-                    onTap: () => _setOperator('+'),
-                    filled: true,
-                  ),
-                  _button(label: '4', onTap: () => _inputDigit('4')),
-                  _button(label: '5', onTap: () => _inputDigit('5')),
-                  _button(label: '6', onTap: () => _inputDigit('6')),
-                  _button(label: '=', onTap: _equals, filled: true),
-                  _button(label: '1', onTap: () => _inputDigit('1')),
-                  _button(label: '2', onTap: () => _inputDigit('2')),
-                  _button(label: '3', onTap: () => _inputDigit('3')),
-                  _button(label: '0', onTap: () => _inputDigit('0')),
-                  _button(label: '.', onTap: _inputDot),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xml/xml.dart' as xml;
 
 class QuizResultView extends StatefulWidget {
@@ -29,7 +30,12 @@ class _QuizResultViewState extends State<QuizResultView> {
   final Map<String, GlobalKey> _questionKeys = {};
   final Map<String, bool> _transcriptOpen = {};
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _selectedQuestionDetailKey = GlobalKey();
+  final Set<String> _expandedModules = <String>{};
+  final Set<String> _showAllModules = <String>{};
   String? _selectedQuestionId;
+  String? _activeModuleName;
+  bool _showScrollToTop = false;
 
   bool get _isExam =>
       widget.result.submissionType == 'exam' || widget.result.type == 'module';
@@ -58,6 +64,28 @@ class _QuizResultViewState extends State<QuizResultView> {
         question: questions[index],
       ),
     );
+  }
+
+  List<_IndexedQuestion> get _visibleIndexedQuestions {
+    final moduleName = _activeModuleName;
+    if (moduleName == null || moduleName.isEmpty) {
+      return _indexedQuestions;
+    }
+    final moduleQuestions = _questionsByModule[moduleName];
+    if (moduleQuestions == null || moduleQuestions.isEmpty) {
+      return _indexedQuestions;
+    }
+    if (_showAllModules.contains(moduleName)) {
+      return moduleQuestions;
+    }
+    if (_selectedQuestionId != null) {
+      final selected = moduleQuestions.firstWhere(
+        (item) => item.question.id == _selectedQuestionId,
+        orElse: () => moduleQuestions.first,
+      );
+      return [selected];
+    }
+    return [moduleQuestions.first];
   }
 
   Map<String, Map<String, dynamic>> get _answersByQuestionId {
@@ -296,6 +324,23 @@ class _QuizResultViewState extends State<QuizResultView> {
     return ordered;
   }
 
+  String _moduleNameOf(QuizQuestion question) {
+    return question.effectiveModuleName.isEmpty
+        ? 'Quiz'
+        : question.effectiveModuleName;
+  }
+
+  void _ensureSelectionForModule(String moduleName) {
+    final items = _questionsByModule[moduleName];
+    if (items == null || items.isEmpty) {
+      return;
+    }
+    if (items.any((item) => item.question.id == _selectedQuestionId)) {
+      return;
+    }
+    _selectedQuestionId = items.first.question.id;
+  }
+
   List<_BreakdownBucket> get _questionTypeBreakdownRw {
     return _buildQuestionTypeBreakdown('rw');
   }
@@ -333,17 +378,39 @@ class _QuizResultViewState extends State<QuizResultView> {
     if (questions.isNotEmpty) {
       _selectedQuestionId = questions.first.id;
     }
+    final modules = _orderedModuleNames;
+    if (modules.isNotEmpty) {
+      _activeModuleName = modules.first;
+      _expandedModules.add(modules.first);
+      _ensureSelectionForModule(modules.first);
+    }
+    _scrollController.addListener(_handleScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _handleScroll() {
+    final shouldShow =
+        _scrollController.hasClients && _scrollController.offset > 640;
+    if (shouldShow != _showScrollToTop && mounted) {
+      setState(() {
+        _showScrollToTop = shouldShow;
+      });
+    }
+  }
+
   void _selectQuestion(QuizQuestion question) {
+    final moduleName = _moduleNameOf(question);
     setState(() {
       _selectedQuestionId = question.id;
+      _activeModuleName = moduleName;
+      _expandedModules.add(moduleName);
+      _showAllModules.remove(moduleName);
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -357,11 +424,16 @@ class _QuizResultViewState extends State<QuizResultView> {
     }
 
     final context = _questionKeys[questionId]?.currentContext;
-    if (context == null) {
+    final targetContext =
+        context ??
+        (_selectedQuestionId == questionId
+            ? _selectedQuestionDetailKey.currentContext
+            : null);
+    if (targetContext == null) {
       return;
     }
 
-    final renderObject = context.findRenderObject();
+    final renderObject = targetContext.findRenderObject();
     if (renderObject == null) {
       return;
     }
@@ -387,6 +459,54 @@ class _QuizResultViewState extends State<QuizResultView> {
     setState(() {
       _transcriptOpen[id] = !(_transcriptOpen[id] ?? false);
     });
+  }
+
+  void _toggleModule(String moduleName) {
+    setState(() {
+      _activeModuleName = moduleName;
+      _ensureSelectionForModule(moduleName);
+      _showAllModules.remove(moduleName);
+      if (_expandedModules.contains(moduleName)) {
+        _expandedModules.remove(moduleName);
+      } else {
+        _expandedModules.add(moduleName);
+      }
+    });
+  }
+
+  void _selectModule(String moduleName) {
+    setState(() {
+      _activeModuleName = moduleName;
+      _expandedModules.add(moduleName);
+      _ensureSelectionForModule(moduleName);
+      _showAllModules.remove(moduleName);
+    });
+  }
+
+  void _toggleShowAllForModule(String moduleName) {
+    setState(() {
+      _activeModuleName = moduleName;
+      _ensureSelectionForModule(moduleName);
+      if (_showAllModules.contains(moduleName)) {
+        _showAllModules.remove(moduleName);
+      } else {
+        _showAllModules
+          ..clear()
+          ..add(moduleName);
+        _expandedModules.add(moduleName);
+      }
+    });
+  }
+
+  Future<void> _scrollToTop() async {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    await _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   List<_BreakdownBucket> _buildQuestionTypeBreakdown(String area) {
@@ -425,6 +545,14 @@ class _QuizResultViewState extends State<QuizResultView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      floatingActionButton: _showScrollToTop
+          ? FloatingActionButton.small(
+              onPressed: _scrollToTop,
+              backgroundColor: const Color(0xFF324DC7),
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.keyboard_arrow_up_rounded),
+            )
+          : null,
       body: SafeArea(
         child: ListView(
           controller: _scrollController,
@@ -1027,32 +1155,21 @@ class _QuizResultViewState extends State<QuizResultView> {
   }
 
   Widget _buildReviewSection({required bool isWide}) {
-    final details = Column(
-      children: _indexedQuestions.map((indexed) {
-        final question = indexed.question;
-        final key = _questionKeys.putIfAbsent(question.id, GlobalKey.new);
-        return Padding(
-          key: key,
-          padding: const EdgeInsets.only(bottom: 20),
-          child: _QuestionReviewCard(
-            indexedQuestion: indexed,
-            question: question,
-            answer: _answersByQuestionId[question.id],
-            isSelected: _selectedQuestionId == question.id,
-            isTranscriptOpen: _transcriptOpen[question.id] == true,
-            onToggleTranscript: _hasTranscript(question)
-                ? () => _toggleTranscript(question)
-                : null,
-            onTap: () => _selectQuestion(question),
-          ),
-        );
-      }).toList(),
+    if (!isWide) {
+      return _buildCompactReviewSection();
+    }
+
+    final details = _buildQuestionReviewDetails(
+      _visibleIndexedQuestions,
+      includeModuleHeading: true,
     );
 
     final board = _QuestionBoardPanel(
       selectedQuestionId: _selectedQuestionId,
+      activeModuleName: _activeModuleName,
       modules: _questionsByModule,
       answersByQuestionId: _answersByQuestionId,
+      onSelectModule: _selectModule,
       onSelectQuestion: _selectQuestion,
     );
 
@@ -1062,12 +1179,171 @@ class _QuizResultViewState extends State<QuizResultView> {
         children: [
           Expanded(flex: 2, child: details),
           const SizedBox(width: 24),
-          SizedBox(width: 360, child: board),
+          SizedBox(width: 392, child: board),
         ],
       );
     }
 
     return Column(children: [board, const SizedBox(height: 20), details]);
+  }
+
+  Widget _buildCompactReviewSection() {
+    return Column(
+      children: [
+        _CompactQuestionBoardPanel(
+          modules: _questionsByModule,
+          answersByQuestionId: _answersByQuestionId,
+          selectedQuestionId: _selectedQuestionId,
+          activeModuleName: _activeModuleName,
+          expandedModules: _expandedModules,
+          showAllModules: _showAllModules,
+          onSelectModule: _selectModule,
+          onToggleModule: _toggleModule,
+          onToggleShowAll: _toggleShowAllForModule,
+          onSelectQuestion: _selectQuestion,
+        ),
+        if (_visibleIndexedQuestions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildQuestionReviewDetails(
+            _visibleIndexedQuestions,
+            includeModuleHeading: true,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildQuestionReviewDetails(
+    List<_IndexedQuestion> items, {
+    required bool includeModuleHeading,
+  }) {
+    final moduleName = _activeModuleName;
+    final canToggleShowAll =
+        moduleName != null &&
+        moduleName.isNotEmpty &&
+        (_questionsByModule[moduleName]?.length ?? 0) > 1;
+    final showingAll =
+        moduleName != null &&
+        moduleName.isNotEmpty &&
+        _showAllModules.contains(moduleName);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (includeModuleHeading && moduleName != null && moduleName.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        moduleName,
+                        style: const TextStyle(
+                          color: QuizDetailPalette.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        showingAll
+                            ? 'Đang hiển thị toàn bộ lời giải trong module này.'
+                            : 'Đang hiển thị câu đang chọn để giảm giật khi xem giải thích.',
+                        style: const TextStyle(
+                          color: QuizDetailPalette.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${items.length} câu',
+                      style: const TextStyle(
+                        color: QuizDetailPalette.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (canToggleShowAll) ...[
+                      const SizedBox(height: 4),
+                      TextButton(
+                        onPressed: () => _toggleShowAllForModule(moduleName),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(
+                          showingAll
+                              ? 'Chỉ xem câu đã chọn'
+                              : 'Hiển thị toàn bộ lời giải',
+                          style: const TextStyle(
+                            color: Color(0xFF324DC7),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        if (items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Text(
+              'Chọn câu hỏi để xem chi tiết.',
+              style: TextStyle(
+                color: QuizDetailPalette.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          )
+        else
+          ...items.map((indexed) {
+            final question = indexed.question;
+            final key = _questionKeys.putIfAbsent(question.id, GlobalKey.new);
+            return Padding(
+              key: key,
+              padding: const EdgeInsets.only(bottom: 20),
+              child: RepaintBoundary(
+                child: _QuestionReviewCard(
+                  indexedQuestion: indexed,
+                  question: question,
+                  answer: _answersByQuestionId[question.id],
+                  isSelected: _selectedQuestionId == question.id,
+                  isTranscriptOpen: _transcriptOpen[question.id] == true,
+                  onToggleTranscript: _hasTranscript(question)
+                      ? () => _toggleTranscript(question)
+                      : null,
+                  onTap: () => _selectQuestion(question),
+                ),
+              ),
+            );
+          }),
+      ],
+    );
   }
 
   bool _isSingleArea(String area) {
@@ -1465,14 +1741,18 @@ class _QuestionReviewCard extends StatelessWidget {
 class _QuestionBoardPanel extends StatelessWidget {
   const _QuestionBoardPanel({
     required this.selectedQuestionId,
+    required this.activeModuleName,
     required this.modules,
     required this.answersByQuestionId,
+    required this.onSelectModule,
     required this.onSelectQuestion,
   });
 
   final String? selectedQuestionId;
+  final String? activeModuleName;
   final Map<String, List<_IndexedQuestion>> modules;
   final Map<String, Map<String, dynamic>> answersByQuestionId;
+  final ValueChanged<String> onSelectModule;
   final ValueChanged<QuizQuestion> onSelectQuestion;
 
   @override
@@ -1509,17 +1789,57 @@ class _QuestionBoardPanel extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ...modules.entries.map((entry) {
+              final isActiveModule = activeModuleName == entry.key;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      entry.key,
-                      style: const TextStyle(
-                        color: Color(0xFF475467),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                    InkWell(
+                      onTap: () => onSelectModule(entry.key),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isActiveModule
+                              ? const Color(0xFFE8F1FF)
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isActiveModule
+                                ? const Color(0xFFBFDBFE)
+                                : const Color(0xFFE4E7EC),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: TextStyle(
+                                  color: isActiveModule
+                                      ? const Color(0xFF1D4ED8)
+                                      : const Color(0xFF475467),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${entry.value.length} câu',
+                              style: TextStyle(
+                                color: isActiveModule
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF667085),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1593,6 +1913,238 @@ class _QuestionBoardPanel extends StatelessWidget {
   }
 }
 
+class _CompactQuestionBoardPanel extends StatelessWidget {
+  const _CompactQuestionBoardPanel({
+    required this.modules,
+    required this.answersByQuestionId,
+    required this.selectedQuestionId,
+    required this.activeModuleName,
+    required this.expandedModules,
+    required this.showAllModules,
+    required this.onSelectModule,
+    required this.onToggleModule,
+    required this.onToggleShowAll,
+    required this.onSelectQuestion,
+  });
+
+  final Map<String, List<_IndexedQuestion>> modules;
+  final Map<String, Map<String, dynamic>> answersByQuestionId;
+  final String? selectedQuestionId;
+  final String? activeModuleName;
+  final Set<String> expandedModules;
+  final Set<String> showAllModules;
+  final ValueChanged<String> onSelectModule;
+  final ValueChanged<String> onToggleModule;
+  final ValueChanged<String> onToggleShowAll;
+  final ValueChanged<QuizQuestion> onSelectQuestion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.grid_view_rounded, color: Color(0xFF2563EB)),
+                SizedBox(width: 8),
+                Text(
+                  'Danh sách câu hỏi',
+                  style: TextStyle(
+                    color: QuizDetailPalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Chọn module để xem danh sách câu, sau đó chọn câu cần xem chi tiết.',
+              style: TextStyle(color: Color(0xFF667085), fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            ...modules.entries.map((entry) {
+              final moduleName = entry.key;
+              final items = entry.value;
+              final isActiveModule = activeModuleName == moduleName;
+              final expanded =
+                  expandedModules.contains(moduleName) || isActiveModule;
+              final showAll = showAllModules.contains(moduleName);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: isActiveModule
+                      ? const Color(0xFFEFF6FF)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isActiveModule
+                        ? const Color(0xFFBFDBFE)
+                        : const Color(0xFFE4E7EC),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: () => onSelectModule(moduleName),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                moduleName,
+                                style: TextStyle(
+                                  color: isActiveModule
+                                      ? const Color(0xFF1D4ED8)
+                                      : const Color(0xFF344054),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '${items.length} câu',
+                                style: TextStyle(
+                                  color: isActiveModule
+                                      ? const Color(0xFF1D4ED8)
+                                      : const Color(0xFF667085),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => onToggleModule(moduleName),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 28,
+                                minHeight: 28,
+                              ),
+                              icon: Icon(
+                                expanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: const Color(0xFF667085),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (expanded) ...[
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: items.map((item) {
+                            final status = _statusOf(
+                              item.question,
+                              answersByQuestionId,
+                            );
+                            final selected =
+                                selectedQuestionId == item.question.id;
+                            return InkWell(
+                              onTap: () => onSelectQuestion(item.question),
+                              borderRadius: BorderRadius.circular(999),
+                              child: Container(
+                                width: 42,
+                                height: 42,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: _circleColorForStatus(status),
+                                  shape: BoxShape.circle,
+                                  border: selected
+                                      ? Border.all(
+                                          color: const Color(0xFF2563EB),
+                                          width: 2.2,
+                                        )
+                                      : null,
+                                  boxShadow: selected
+                                      ? const [
+                                          BoxShadow(
+                                            color: Color(0x262563EB),
+                                            blurRadius: 10,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  '${item.displayNumber}',
+                                  style: TextStyle(
+                                    color: status == _AnswerStatus.unanswered
+                                        ? const Color(0xFF344054)
+                                        : Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () => onToggleShowAll(moduleName),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          child: Text(
+                            showAll
+                                ? 'Chỉ xem 1 câu'
+                                : 'Hiển thị tất cả ${items.length} câu trong giải đáp',
+                            style: const TextStyle(
+                              color: Color(0xFF324DC7),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 4),
+            const Wrap(
+              spacing: 16,
+              runSpacing: 10,
+              children: [
+                _LegendDot(color: Color(0xFF10B981), text: 'Câu đúng'),
+                _LegendDot(color: Color(0xFFFF1F5B), text: 'Câu sai'),
+                _LegendDot(color: Color(0xFFCBD5E1), text: 'Chưa trả lời'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _QuizContentView extends StatelessWidget {
   const _QuizContentView({
     required this.question,
@@ -1610,6 +2162,16 @@ class _QuizContentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_shouldUseHtmlRenderer(question, raw, option: option)) {
+      return _RichQuestionHtmlView(
+        html: _renderRichHtml(question, raw, option: option),
+        textStyle: style,
+        maxImageHeight: maxImageHeight,
+        interactive: false,
+        inline: _shouldUseInlineHtmlRenderer(raw, option: option),
+      );
+    }
+
     final chunks = _tokenizeContent(raw, question, option: option);
     if (chunks.isEmpty) {
       final text = _renderText(raw);
@@ -1672,6 +2234,595 @@ class _QuizContentView extends StatelessWidget {
             return Text(text, style: style);
         }
       }).toList(),
+    );
+  }
+}
+
+bool _shouldUseHtmlRenderer(
+  QuizQuestion question,
+  String raw, {
+  QuizOption? option,
+}) {
+  final content = raw.trim().toLowerCase();
+  if (content.isEmpty) {
+    return false;
+  }
+
+  if (content.contains('<math') ||
+      content.contains('[math:') ||
+      content.contains('[image:') ||
+      content.contains('<table') ||
+      content.contains('[*')) {
+    return true;
+  }
+
+  if (option != null) {
+    return option.maths.isNotEmpty || option.images.isNotEmpty;
+  }
+
+  return question.maths.isNotEmpty || question.images.isNotEmpty;
+}
+
+bool _shouldUseInlineHtmlRenderer(String raw, {QuizOption? option}) {
+  if (option == null) {
+    return false;
+  }
+  final content = raw.trim().toLowerCase();
+  if (content.contains('<table') ||
+      content.contains('[image:') ||
+      content.contains('<img')) {
+    return false;
+  }
+  return true;
+}
+
+String _renderRichHtml(
+  QuizQuestion question,
+  String raw, {
+  QuizOption? option,
+}) {
+  if (raw.trim().isEmpty) {
+    return '';
+  }
+
+  var html = _convertTextTableToHtml(raw);
+  final maths = <QuizMathAsset>[...question.maths, ...?option?.maths];
+  final images = <QuizImageAsset>[...question.images, ...?option?.images];
+
+  for (final mathAsset in maths) {
+    final placeholder = '[Math:${mathAsset.id}]';
+    final rendered = mathAsset.mathml.trim().isNotEmpty
+        ? '<span class="math-placeholder" data-math-id="${mathAsset.id}">${mathAsset.mathml}</span>'
+        : '<span class="math-fallback">${_renderMathAsText(mathAsset)}</span>';
+    html = html.replaceAll(placeholder, rendered);
+  }
+
+  for (final image in images) {
+    final placeholder = '[Image:${image.id}]';
+    final url = _normalizeAssetUrl(image.path);
+    final rendered =
+        '<div class="image-block"><img src="$url" data-image-id="${image.id}" alt="question image" /></div>';
+    html = html.replaceAll(placeholder, rendered);
+  }
+
+  if (!html.toLowerCase().contains('<math')) {
+    final missingMath = maths
+        .where((item) => item.mathml.trim().isNotEmpty)
+        .where((item) => !html.contains('data-math-id="${item.id}"'))
+        .map(
+          (item) =>
+              '<div class="math-block" data-math-id="${item.id}">${item.mathml}</div>',
+        )
+        .join();
+    if (missingMath.isNotEmpty) {
+      html = '$html<div class="math-stack">$missingMath</div>';
+    }
+  }
+
+  if (!html.toLowerCase().contains('<img')) {
+    final missingImages = images
+        .where((item) => item.path.trim().isNotEmpty)
+        .map(
+          (item) =>
+              '<div class="image-block"><img src="${_normalizeAssetUrl(item.path)}" data-image-id="${item.id}" alt="question image" /></div>',
+        )
+        .join();
+    if (missingImages.isNotEmpty) {
+      html = '$html<div class="image-stack">$missingImages</div>';
+    }
+  }
+
+  return _sanitizeRichHtml(_normalizeInlineHtmlSources(html));
+}
+
+String _convertTextTableToHtml(String text) {
+  if (text.isEmpty) {
+    return text;
+  }
+
+  final protected = _protectPlaceholders(text);
+  final protectedText = protected.protectedText;
+  final rows = <({int start, int end, List<String> cells})>[];
+  final rowRegExp = RegExp(r'\[\*\s*([^*]+?)\s*\*\]');
+
+  bool isBlank(String value) {
+    return value.replaceAll(
+          RegExp(
+            r'^(?:\s|<br[^>]*>|\n|<\/?(?:p|div)[^>]*>)*$',
+            caseSensitive: false,
+          ),
+          '',
+        ) ==
+        '';
+  }
+
+  for (final match in rowRegExp.allMatches(protectedText)) {
+    rows.add((
+      start: match.start,
+      end: match.end,
+      cells: (match.group(1) ?? '')
+          .split('|')
+          .map((cell) => cell.trim().isEmpty ? ' ' : cell.trim())
+          .toList(),
+    ));
+  }
+
+  if (rows.isEmpty) {
+    return _restorePlaceholders(protectedText, protected.saved);
+  }
+
+  final groups = <({int start, int end, List<List<String>> rows})>[];
+  ({int start, int end, List<List<String>> rows})? current;
+
+  for (final row in rows) {
+    if (current == null) {
+      current = (start: row.start, end: row.end, rows: [row.cells]);
+      groups.add(current);
+      continue;
+    }
+
+    final gap = protectedText.substring(current.end, row.start);
+    if (isBlank(gap)) {
+      current = (
+        start: current.start,
+        end: row.end,
+        rows: [...current.rows, row.cells],
+      );
+      groups[groups.length - 1] = current;
+    } else {
+      current = (start: row.start, end: row.end, rows: [row.cells]);
+      groups.add(current);
+    }
+  }
+
+  var output = protectedText;
+  for (var index = groups.length - 1; index >= 0; index--) {
+    final group = groups[index];
+    final rowsHtml = StringBuffer();
+    for (var rowIndex = 0; rowIndex < group.rows.length; rowIndex++) {
+      final row = group.rows[rowIndex];
+      final isHeader = rowIndex == 0;
+      final tag = isHeader ? 'th' : 'td';
+      final style = isHeader
+          ? 'border:1px solid #cbd5e1;padding:8px;background:#f8fafc;font-weight:700;'
+          : 'border:1px solid #cbd5e1;padding:8px;';
+      rowsHtml.write(
+        '<tr>${row.map((cell) => '<$tag style="$style">$cell</$tag>').join()}</tr>',
+      );
+    }
+    final tableHtml = '<table class="text-table">$rowsHtml</table>';
+    output =
+        '${output.substring(0, group.start)}$tableHtml${output.substring(group.end)}';
+  }
+
+  return _restorePlaceholders(output, protected.saved);
+}
+
+({String protectedText, List<String> saved}) _protectPlaceholders(String text) {
+  final saved = <String>[];
+  final protectedText = text.replaceAllMapped(
+    RegExp(r'\[(?:Math|Image):[^\]]+\]', caseSensitive: false),
+    (match) {
+      final index = saved.length;
+      saved.add(match.group(0)!);
+      return '__PH_${index}__';
+    },
+  );
+  return (protectedText: protectedText, saved: saved);
+}
+
+String _restorePlaceholders(String text, List<String> saved) {
+  return text.replaceAllMapped(RegExp(r'__PH_(\d+)__'), (match) {
+    final index = int.tryParse(match.group(1) ?? '') ?? -1;
+    if (index < 0 || index >= saved.length) {
+      return match.group(0)!;
+    }
+    return saved[index];
+  });
+}
+
+String _normalizeInlineHtmlSources(String html) {
+  return html.replaceAllMapped(
+    RegExp(r'''src=(["'])(.*?)\1''', caseSensitive: false),
+    (match) {
+      final quote = match.group(1) ?? '"';
+      final src = match.group(2) ?? '';
+      final normalized = _normalizeAssetUrl(src);
+      return 'src=$quote$normalized$quote';
+    },
+  );
+}
+
+String _sanitizeRichHtml(String html) {
+  if (html.trim().isEmpty) {
+    return '';
+  }
+
+  var normalized = html;
+  normalized = normalized.replaceAll(
+    RegExp(
+      r'<span\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*/?>)*</span>',
+      caseSensitive: false,
+    ),
+    '',
+  );
+  normalized = normalized.replaceAll(
+    RegExp(
+      r'<(?:p|div)\b[^>]*>(?:\s|&nbsp;|&#160;|<br\s*/?>)*</(?:p|div)>',
+      caseSensitive: false,
+    ),
+    '',
+  );
+  normalized = normalized.replaceAll(
+    RegExp(r'(?:<br\s*/?>\s*){3,}', caseSensitive: false),
+    '<br>',
+  );
+  normalized = normalized.replaceAll(
+    RegExp(r'>\s+<', caseSensitive: false),
+    '><',
+  );
+  return normalized.trim();
+}
+
+class _RichQuestionHtmlView extends StatefulWidget {
+  const _RichQuestionHtmlView({
+    required this.html,
+    required this.textStyle,
+    required this.maxImageHeight,
+    required this.interactive,
+    required this.inline,
+  });
+
+  final String html;
+  final TextStyle textStyle;
+  final double maxImageHeight;
+  final bool interactive;
+  final bool inline;
+
+  @override
+  State<_RichQuestionHtmlView> createState() => _RichQuestionHtmlViewState();
+}
+
+class _RichQuestionHtmlViewState extends State<_RichQuestionHtmlView> {
+  late final WebViewController _controller;
+  double _height = 80;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.transparent)
+      ..addJavaScriptChannel(
+        'HeightObserver',
+        onMessageReceived: (message) {
+          final nextHeight = double.tryParse(message.message);
+          if (nextHeight == null || nextHeight <= 0) {
+            return;
+          }
+          final normalized = nextHeight.clamp(40, 2200).toDouble();
+          if (!mounted || (normalized - _height).abs() < 1) {
+            return;
+          }
+          setState(() {
+            _height = normalized;
+          });
+        },
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (_) => NavigationDecision.prevent,
+          onPageFinished: (_) async {
+            await _remeasure();
+          },
+        ),
+      );
+    _loadHtml();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RichQuestionHtmlView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.html != widget.html ||
+        oldWidget.textStyle.fontSize != widget.textStyle.fontSize ||
+        oldWidget.maxImageHeight != widget.maxImageHeight ||
+        oldWidget.inline != widget.inline) {
+      _loadHtml();
+    }
+  }
+
+  Future<void> _loadHtml() async {
+    final html = _buildHtmlDocument();
+    await _controller.loadHtmlString(html, baseUrl: ApiConfig.webBaseUrl);
+  }
+
+  Future<void> _remeasure() async {
+    try {
+      await _controller.runJavaScript('measureHeight();');
+      Future<void>.delayed(const Duration(milliseconds: 250), () {
+        _controller.runJavaScript('measureHeight();');
+      });
+      Future<void>.delayed(const Duration(milliseconds: 650), () {
+        _controller.runJavaScript('measureHeight();');
+      });
+    } catch (_) {}
+  }
+
+  String _buildHtmlDocument() {
+    final fontSize = widget.textStyle.fontSize ?? 16;
+    final lineHeight = widget.textStyle.height ?? 1.5;
+    final fontWeight = (widget.textStyle.fontWeight ?? FontWeight.w500).value;
+    final color = _cssColor(widget.textStyle.color ?? Colors.black);
+    final rootClass = widget.inline ? 'inline-root' : 'question-html';
+
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+    body {
+      color: $color;
+      font-size: ${fontSize}px;
+      line-height: $lineHeight;
+      font-weight: $fontWeight;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      ${widget.interactive ? '' : 'pointer-events: none; user-select: none;'}
+      word-break: normal;
+      overflow-wrap: anywhere;
+    }
+    * {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+    .question-html {
+      width: 100%;
+    }
+    .inline-root {
+      display: inline;
+      width: auto;
+      white-space: normal;
+    }
+    p, div, span, li, td, th {
+      font-size: inherit;
+      line-height: inherit;
+    }
+    .question-html p {
+      margin: 0 0 0.28em 0;
+    }
+    .question-html > p:last-child,
+    .question-html > div:last-child,
+    .question-html > figure:last-child {
+      margin-bottom: 0;
+    }
+    .question-html div,
+    .question-html figure,
+    .question-html span {
+      margin: 0;
+    }
+    .inline-root p,
+    .inline-root div,
+    .inline-root span {
+      display: inline;
+      margin: 0;
+    }
+    .inline-root br {
+      display: none;
+    }
+    .inline-root .math-inline {
+      display: inline;
+    }
+    .inline-root math,
+    .inline-root math * {
+      display: inline;
+    }
+    .question-html figure {
+      width: 100%;
+    }
+    .question-html p:empty,
+    .question-html div:empty,
+    .question-html span:empty {
+      display: none;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 8px auto;
+      max-height: ${widget.maxImageHeight}px;
+    }
+    .image-block, .math-block, .math-stack, .image-stack {
+      margin: 8px 0;
+    }
+    .image-block img,
+    .image-stack img {
+      margin: 0 auto;
+    }
+    .table-wrap,
+    figure.table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin: 8px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .text-table,
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      border: 1px solid #cbd5e1;
+      table-layout: auto;
+    }
+    .text-table td,
+    .text-table th,
+    table td,
+    table th {
+      border: 1px solid #cbd5e1;
+      padding: 8px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .text-table th,
+    table th {
+      background: #f8fafc;
+    }
+    .question-html table p,
+    .question-html table div,
+    .question-html table figure {
+      margin: 0 !important;
+    }
+    .math-placeholder {
+      display: inline;
+      white-space: normal;
+    }
+    .math-placeholder > * {
+      display: inline !important;
+    }
+    mjx-container {
+      display: inline-block !important;
+      max-width: 100%;
+      overflow: visible;
+      margin: 0 0.06em;
+      vertical-align: middle;
+    }
+    mjx-container[display="true"] {
+      display: inline-block !important;
+      margin: 0 0.06em !important;
+    }
+    .question-html .math-block mjx-container,
+    .question-html .math-stack mjx-container {
+      display: inline-block !important;
+      margin: 0;
+    }
+  </style>
+  <script>
+    window.MathJax = {
+      options: {
+        renderActions: { addMenu: [] },
+      },
+      startup: {
+        typeset: false,
+      },
+    };
+    function measureHeight() {
+      const body = document.body;
+      const html = document.documentElement;
+      const height = Math.max(
+        body.scrollHeight,
+        body.offsetHeight,
+        html.clientHeight,
+        html.scrollHeight,
+        html.offsetHeight,
+      );
+      HeightObserver.postMessage(String(height));
+    }
+    function cleanupHtml() {
+      const root = document.querySelector('.question-html, .inline-root');
+      if (!root) {
+        return;
+      }
+
+      root.querySelectorAll('span, p, div').forEach((node) => {
+        if (node.querySelector('img, table, math, mjx-container, figure, svg')) {
+          return;
+        }
+        const text = (node.textContent || '').replace(/\\u00a0/g, '').trim();
+        if (!text) {
+          node.remove();
+        }
+      });
+
+      root.querySelectorAll('figure.table').forEach((figure) => {
+        figure.classList.add('table-wrap');
+      });
+
+      root.querySelectorAll('table').forEach((table) => {
+        if (table.parentElement && table.parentElement.classList.contains('table-wrap')) {
+          return;
+        }
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrap';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      });
+
+      root.querySelectorAll('p').forEach((paragraph) => {
+        if (paragraph.closest('table')) {
+          paragraph.style.margin = '0';
+        }
+      });
+
+      if (root.classList.contains('inline-root')) {
+        root.querySelectorAll('br').forEach((br) => br.remove());
+      }
+    }
+    window.addEventListener('load', async function () {
+      try {
+        cleanupHtml();
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          await window.MathJax.typesetPromise();
+        }
+      } catch (e) {}
+      cleanupHtml();
+      measureHeight();
+      setTimeout(measureHeight, 120);
+      setTimeout(measureHeight, 360);
+      setTimeout(measureHeight, 800);
+    });
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js"></script>
+</head>
+<body>
+  <div class="$rootClass">${widget.html}</div>
+</body>
+</html>
+''';
+  }
+
+  String _cssColor(Color color) {
+    return 'rgba(${(color.r * 255).round()}, ${(color.g * 255).round()}, ${(color.b * 255).round()}, ${color.a})';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _height,
+      width: double.infinity,
+      child: IgnorePointer(
+        ignoring: !widget.interactive,
+        child: WebViewWidget(controller: _controller),
+      ),
     );
   }
 }
