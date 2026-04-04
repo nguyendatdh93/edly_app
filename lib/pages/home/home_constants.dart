@@ -32,31 +32,31 @@ class HomeContent {
 
   static const List<HomeHeroSlideData> slides = [
     HomeHeroSlideData(
-      title: 'Ninja SAT (All-in-one)',
+      title: 'Luyện đề ĐGNL 2025',
       description:
-          'Luyện thi SAT toàn diện với lộ trình gọn, full-length tests, problem sets và video giải chi tiết.',
-      buttonText: 'Tiếp tục ôn luyện',
+          'Kho đề ĐGNL HSA, V-ACT, TSA bám sát cấu trúc mới nhất. Phòng thi thử mô phỏng 99% trải nghiệm thi thật.',
+      buttonText: 'Vào phòng thi',
       gradient: [Color(0xFF1C2454), Color(0xFF5A54F4)],
       accent: Color(0xFF8EE3FF),
-      highlight: 'Lộ trình Digital SAT nổi bật',
+      highlight: 'Phòng thi thử giống 99% phòng thi thật',
     ),
     HomeHeroSlideData(
-      title: 'IELTS 7+ Mastery',
+      title: 'Tổng ôn TNTHPT 2025',
       description:
-          'Bộ khóa học tập trung vào Speaking, Writing và chiến lược làm bài để bứt phá band điểm.',
-      buttonText: 'Xem chi tiết',
+          'Hệ thống đề thi và bài tập theo ma trận Bộ GD&ĐT. Luyện đúng trọng tâm – không học lan man.',
+      buttonText: 'Luyện ngay',
       gradient: [Color(0xFF0F7B6C), Color(0xFF17B97C)],
       accent: Color(0xFFFFE48A),
-      highlight: 'Ưu đãi đặc biệt cho học viên mới',
+      highlight: 'Đề sát – bài tập hay – trúng tủ cao',
     ),
     HomeHeroSlideData(
-      title: 'SAT Practice Tests',
+      title: 'AI phân tích kết quả học tập',
       description:
-          'Làm quen phòng thi, kiểm tra tiến độ và tăng tốc với bộ đề SAT mô phỏng sát bài thi thật.',
-      buttonText: 'Luyện ngay',
+          'Theo dõi tiến độ, phát hiện điểm yếu từng phần và tối ưu lộ trình ôn luyện cá nhân hóa.',
+      buttonText: 'Xem kết quả',
       gradient: [Color(0xFF12263A), Color(0xFF2D5BFF)],
       accent: Color(0xFFFFA86B),
-      highlight: 'Phòng thi thử SAT',
+      highlight: 'Phân tích chi tiết sau mỗi lần làm bài',
     ),
   ];
 
