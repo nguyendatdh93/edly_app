@@ -1,4 +1,4 @@
-import 'package:edly/core/config/flavor_config.dart';
+import 'package:edupen/core/config/flavor_config.dart';
 
 /// Cấu hình API cho app mobile. Có thể override bằng `--dart-define`.
 class ApiConfig {
@@ -20,7 +20,7 @@ class ApiConfig {
   }
 
   static String get deviceName =>
-      'edly-mobile-app-${FlavorConfig.instance.flavor.name}';
+      'edupen-mobile-app-${FlavorConfig.instance.flavor.name}';
 
   static String get webBaseUrl {
     final apiUrl = Uri.parse(baseUrl);

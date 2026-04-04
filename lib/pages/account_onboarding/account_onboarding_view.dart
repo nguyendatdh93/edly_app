@@ -1,6 +1,6 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/home/home_view.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/home/home_view.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

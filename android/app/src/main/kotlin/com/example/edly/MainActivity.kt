@@ -1,4 +1,4 @@
-package com.example.edly
+package com.example.edupen
 
 import io.flutter.embedding.android.FlutterActivity
 

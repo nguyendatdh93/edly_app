@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.edly"
+    namespace = "com.example.edupen"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.edly"
+        applicationId = "com.example.edupen"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

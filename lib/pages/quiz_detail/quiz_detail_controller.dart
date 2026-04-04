@@ -1,7 +1,7 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/course_detail/course_detail_models.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/course_detail/course_detail_models.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_repository.dart';
 import 'package:flutter/foundation.dart';
 
 class QuizDetailController extends ChangeNotifier {

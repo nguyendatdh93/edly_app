@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:edly/core/config/api_config.dart';
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/pages/sat_packages/sat_packages_models.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/config/api_config.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/pages/sat_packages/sat_packages_models.dart';
+import 'package:edupen/services/auth_repository.dart';
 
 class SatPackagesRepository {
   SatPackagesRepository._internal()

@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:edly/core/config/api_config.dart';
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/course_detail/course_detail_constants.dart';
-import 'package:edly/pages/course_detail/course_detail_models.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/config/api_config.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/course_detail/course_detail_constants.dart';
+import 'package:edupen/pages/course_detail/course_detail_models.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -819,7 +819,7 @@ class CourseDetailRepository {
     if (lower.startsWith('storage/')) {
       return _toAbsoluteUri(normalized);
     }
-    if (lower.startsWith('edly/')) {
+    if (lower.startsWith('edupen/')) {
       return _toAbsoluteUri('storage/$normalized');
     }
     return _toAbsoluteUri(normalized);
@@ -835,7 +835,7 @@ class CourseDetailRepository {
       return null;
     }
     final likelyStoragePath =
-        normalizedPath.toLowerCase().startsWith('edly/') ||
+        normalizedPath.toLowerCase().startsWith('edupen/') ||
         normalizedPath.toLowerCase().startsWith('public/') ||
         normalizedPath.toLowerCase().contains('/pdfs/') ||
         normalizedPath.toLowerCase().contains('/docx/') ||

@@ -1,6 +1,6 @@
-import 'package:edly/app_bootstrap_view.dart';
-import 'package:edly/core/config/flavor_config.dart';
-import 'package:edly/pages/home/home_constants.dart';
+import 'package:edupen/app_bootstrap_view.dart';
+import 'package:edupen/core/config/flavor_config.dart';
+import 'package:edupen/pages/home/home_constants.dart';
 import 'package:flutter/material.dart';
 
 class EdlyApp extends StatelessWidget {

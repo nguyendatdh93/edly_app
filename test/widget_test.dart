@@ -1,8 +1,8 @@
-import 'package:edly/app.dart';
-import 'package:edly/core/config/flavor_config.dart';
-import 'package:edly/pages/sign_in/sign_in_view.dart';
-import 'package:edly/pages/home/home_view.dart';
-import 'package:edly/pages/sign_up/sign_up_view.dart';
+import 'package:edupen/app.dart';
+import 'package:edupen/core/config/flavor_config.dart';
+import 'package:edupen/pages/sign_in/sign_in_view.dart';
+import 'package:edupen/pages/home/home_view.dart';
+import 'package:edupen/pages/sign_up/sign_up_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

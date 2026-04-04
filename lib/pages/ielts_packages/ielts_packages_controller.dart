@@ -1,7 +1,7 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_models.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_repository.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/pages/ielts_packages/ielts_packages_models.dart';
+import 'package:edupen/pages/ielts_packages/ielts_packages_repository.dart';
 import 'package:flutter/foundation.dart';
 
 class IeltsPackagesController extends ChangeNotifier {

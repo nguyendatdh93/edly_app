@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:edly/pages/course_detail/course_detail_view.dart';
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/account_profile/account_profile_view.dart';
-import 'package:edly/pages/home/home_constants.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/pages/home/home_repository.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_view.dart';
-import 'package:edly/pages/sat_packages/sat_packages_view.dart';
-import 'package:edly/pages/sign_in/sign_in_view.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/pages/course_detail/course_detail_view.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/account_profile/account_profile_view.dart';
+import 'package:edupen/pages/home/home_constants.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/pages/home/home_repository.dart';
+import 'package:edupen/pages/ielts_packages/ielts_packages_view.dart';
+import 'package:edupen/pages/sat_packages/sat_packages_view.dart';
+import 'package:edupen/pages/sign_in/sign_in_view.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

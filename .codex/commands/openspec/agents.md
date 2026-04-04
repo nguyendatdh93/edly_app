@@ -1,4 +1,4 @@
-# OpenSpec Agent Rules for edly
+# OpenSpec Agent Rules for edupen
 
 ## Tech stack
 - Flutter

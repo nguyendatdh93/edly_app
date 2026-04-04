@@ -1,5 +1,5 @@
 #include "Release.xcconfig"
 
 APP_DISPLAY_NAME=Edly Dev
-APP_BUNDLE_IDENTIFIER=com.example.edly.dev
+APP_BUNDLE_IDENTIFIER=com.example.edupen.dev
 FLUTTER_TARGET=lib/main_dev.dart

@@ -1,7 +1,7 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/models/account_profile.dart';
-import 'package:edly/pages/home/home_view.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/models/account_profile.dart';
+import 'package:edupen/pages/home/home_view.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 
 class AccountProfileView extends StatefulWidget {

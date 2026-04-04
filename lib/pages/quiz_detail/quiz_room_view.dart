@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:edly/core/config/api_config.dart';
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_constants.dart';
-import 'package:edly/pages/quiz_detail/quiz_congratulations_view.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/config/api_config.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_constants.dart';
+import 'package:edupen/pages/quiz_detail/quiz_congratulations_view.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_repository.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -1225,7 +1225,7 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                           child: Row(
                             children: [
                               Image.asset(
-                                'assets/images/edly-logo.png',
+                                'assets/images/edupen-logo.png',
                                 height: compact ? 22 : 28,
                                 fit: BoxFit.contain,
                               ),

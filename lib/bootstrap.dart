@@ -1,5 +1,5 @@
-import 'package:edly/app.dart';
-import 'package:edly/core/config/flavor_config.dart';
+import 'package:edupen/app.dart';
+import 'package:edupen/core/config/flavor_config.dart';
 import 'package:flutter/material.dart';
 
 void bootstrapApp(AppFlavor flavor) {

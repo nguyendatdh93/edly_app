@@ -1,11 +1,11 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/course_detail/course_detail_constants.dart';
-import 'package:edly/pages/course_detail/course_detail_lecture_view.dart';
-import 'package:edly/pages/course_detail/course_detail_models.dart';
-import 'package:edly/pages/course_detail/course_detail_repository.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_view.dart';
-import 'package:edly/services/auth_repository.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/course_detail/course_detail_constants.dart';
+import 'package:edupen/pages/course_detail/course_detail_lecture_view.dart';
+import 'package:edupen/pages/course_detail/course_detail_models.dart';
+import 'package:edupen/pages/course_detail/course_detail_repository.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_view.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

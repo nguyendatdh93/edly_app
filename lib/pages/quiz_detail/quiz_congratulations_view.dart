@@ -1,7 +1,7 @@
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_constants.dart';
-import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
-import 'package:edly/pages/quiz_detail/quiz_result_view.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_constants.dart';
+import 'package:edupen/pages/quiz_detail/quiz_detail_repository.dart';
+import 'package:edupen/pages/quiz_detail/quiz_result_view.dart';
 import 'package:flutter/material.dart';
 
 class QuizCongratulationsView extends StatefulWidget {

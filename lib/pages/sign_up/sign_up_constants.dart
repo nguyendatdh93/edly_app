@@ -28,7 +28,7 @@ class SignUpContent {
   static const String primaryButton = 'Đăng ký';
   static const String footerPrompt = 'Đã có tài khoản?';
   static const String footerAction = 'Đăng nhập';
-  static const String logoAsset = 'assets/images/edly-logo.png';
+  static const String logoAsset = 'assets/images/edupen-logo.png';
 
   const SignUpContent._();
 }

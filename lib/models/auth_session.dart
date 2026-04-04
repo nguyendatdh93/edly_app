@@ -1,4 +1,4 @@
-import 'package:edly/models/auth_user.dart';
+import 'package:edupen/models/auth_user.dart';
 
 class AuthSession {
   const AuthSession({

@@ -1,4 +1,4 @@
-import 'package:edly/pages/home/home_controller.dart';
+import 'package:edupen/pages/home/home_controller.dart';
 import 'package:get/get.dart';
 
 /// Binding khai báo nơi khởi tạo controller cho màn home.

@@ -1,7 +1,7 @@
-import 'package:edly/pages/course_detail/course_detail_view.dart';
-import 'package:edly/pages/home/home_models.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_constants.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_controller.dart';
+import 'package:edupen/pages/course_detail/course_detail_view.dart';
+import 'package:edupen/pages/home/home_models.dart';
+import 'package:edupen/pages/ielts_packages/ielts_packages_constants.dart';
+import 'package:edupen/pages/ielts_packages/ielts_packages_controller.dart';
 import 'package:flutter/material.dart';
 
 class IeltsPackagesView extends StatefulWidget {

@@ -1,4 +1,4 @@
-import 'package:edly/pages/home/home_models.dart';
+import 'package:edupen/pages/home/home_models.dart';
 
 class SatPackagesData {
   const SatPackagesData({

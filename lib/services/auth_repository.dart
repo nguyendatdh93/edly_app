@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:edly/core/config/api_config.dart';
-import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/models/account_onboarding.dart';
-import 'package:edly/models/account_profile.dart';
-import 'package:edly/models/auth_session.dart';
-import 'package:edly/models/auth_user.dart';
+import 'package:edupen/core/config/api_config.dart';
+import 'package:edupen/core/network/app_exception.dart';
+import 'package:edupen/models/account_onboarding.dart';
+import 'package:edupen/models/account_profile.dart';
+import 'package:edupen/models/auth_session.dart';
+import 'package:edupen/models/auth_user.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Repository gom toàn bộ luồng xác thực cho app mobile.
@@ -26,7 +26,7 @@ class AuthRepository {
       _storage = const FlutterSecureStorage();
 
   static final AuthRepository instance = AuthRepository._internal();
-  static const String _sessionKey = 'edly.auth.session';
+  static const String _sessionKey = 'edupen.auth.session';
 
   final Dio _dio;
   final FlutterSecureStorage _storage;
