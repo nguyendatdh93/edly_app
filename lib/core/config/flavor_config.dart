@@ -20,13 +20,13 @@ class FlavorConfig {
     instance = switch (flavor) {
       AppFlavor.dev => FlavorConfig._(
           flavor: AppFlavor.dev,
-          appName: 'Edly Dev',
-          defaultBaseUrl: 'http://edly.local/api',
+          appName: 'Edupen Dev',
+          defaultBaseUrl: 'http://edupen.local/api',
         ),
       AppFlavor.prod => FlavorConfig._(
           flavor: AppFlavor.prod,
-          appName: 'Edly',
-          defaultBaseUrl: 'https://edly.vn/api',
+          appName: 'Edupen',
+          defaultBaseUrl: 'https://edupen.vn/api',
         ),
     };
   }

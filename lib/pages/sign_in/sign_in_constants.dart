@@ -19,7 +19,7 @@ class SignInPalette {
 
 /// Chứa toàn bộ text và đường dẫn asset của màn đăng nhập.
 class SignInContent {
-  static const String appName = 'Edly';
+  static const String appName = 'Edupen';
   static const String title = 'Đăng nhập';
   static const String subtitle = 'Chào mừng bạn quay trở lại!';
   static const String googleButton = 'Đăng nhập với Google';
@@ -33,7 +33,7 @@ class SignInContent {
   static const String primaryButton = 'Đăng nhập';
   static const String footerPrompt = 'Chưa có tài khoản?';
   static const String footerAction = 'Đăng ký ngay';
-  static const String logoAsset = 'assets/images/edly-logo.png';
+  static const String logoAsset = 'assets/images/edupen-logo.png';
 
   const SignInContent._();
 }
