@@ -17,7 +17,7 @@ class HomePalette {
 }
 
 class HomeContent {
-  static const String appName = 'Edly';
+  static const String appName = 'Edupen';
   static const String logoAsset = 'assets/images/edupen-logo.png';
   static const String searchHint = 'Tìm kiếm khóa học, bài viết...';
 

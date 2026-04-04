@@ -409,7 +409,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
               const SizedBox(height: 14),
               Text(
                 widget.isOnboarding
-                    ? 'Thêm vài thông tin cơ bản để Edly gợi ý lộ trình học phù hợp và đồng bộ trải nghiệm như trên web.'
+                    ? 'Thêm vài thông tin cơ bản để Edupen gợi ý lộ trình học phù hợp và đồng bộ trải nghiệm như trên web.'
                     : 'Bạn có thể cập nhật các thông tin cá nhân đang được web sử dụng để cá nhân hóa nội dung học.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.92),
@@ -786,7 +786,7 @@ class _ProfileSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  profile.name.isEmpty ? 'Tài khoản Edly' : profile.name,
+                  profile.name.isEmpty ? 'Tài khoản Edupen' : profile.name,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF17233A),
                     fontWeight: FontWeight.w800,

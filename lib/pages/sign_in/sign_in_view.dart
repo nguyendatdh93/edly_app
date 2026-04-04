@@ -18,6 +18,14 @@ class _SignInViewState extends State<SignInView> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+
+    _loginController.text = "0397416899";
+    _passwordController.text = "Tailieuchuan@55";
+  }
+
   bool _isSubmitting = false;
   bool _rememberMe = true;
   String? _errorMessage;
@@ -52,9 +60,7 @@ class _SignInViewState extends State<SignInView> {
       }
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          builder: (_) => buildSignedInDestination(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => buildSignedInDestination()),
         (route) => false,
       );
     } on AppException catch (error) {
@@ -74,11 +80,9 @@ class _SignInViewState extends State<SignInView> {
   }
 
   void _goToSignUp(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const SignUpView(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const SignUpView()));
   }
 
   void _showGoogleUnavailable() {
@@ -200,9 +204,7 @@ class _SignInViewState extends State<SignInView> {
                                 _rememberMe = value ?? true;
                               });
                             },
-                            side: const BorderSide(
-                              color: SignInPalette.border,
-                            ),
+                            side: const BorderSide(color: SignInPalette.border),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -234,9 +236,7 @@ class _SignInViewState extends State<SignInView> {
                           ),
                           child: const Text(
                             SignInContent.forgotPassword,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -297,9 +297,7 @@ class _SignInViewState extends State<SignInView> {
                           ),
                           child: const Text(
                             SignInContent.footerAction,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -328,9 +326,9 @@ class _FieldLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: SignInPalette.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+          color: SignInPalette.textPrimary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -430,28 +428,20 @@ class _DividerLabel extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Divider(
-            color: SignInPalette.divider,
-            thickness: 1,
-            height: 1,
-          ),
+          child: Divider(color: SignInPalette.divider, thickness: 1, height: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             SignInContent.dividerText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: SignInPalette.textMuted,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: SignInPalette.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const Expanded(
-          child: Divider(
-            color: SignInPalette.divider,
-            thickness: 1,
-            height: 1,
-          ),
+          child: Divider(color: SignInPalette.divider, thickness: 1, height: 1),
         ),
       ],
     );
@@ -476,9 +466,9 @@ class _ErrorNotice extends StatelessWidget {
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFC7254E),
-              fontWeight: FontWeight.w600,
-            ),
+          color: const Color(0xFFC7254E),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

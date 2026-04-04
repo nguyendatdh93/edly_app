@@ -767,7 +767,7 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                       breakSeconds: _breakRemainingSeconds ?? 0,
                       userName: (username?.isNotEmpty == true)
                           ? username!
-                          : 'Edly',
+                          : 'Edupen',
                       onResumeNow: _resumeFromBreak,
                     ),
                   )
@@ -1240,7 +1240,7 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                                 child: Text(
                                   (username?.isNotEmpty == true)
                                       ? username!
-                                      : 'Edly',
+                                      : 'Edupen',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

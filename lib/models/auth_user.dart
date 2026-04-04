@@ -96,7 +96,7 @@ class AuthUser {
       return identifier;
     }
 
-    return 'Tài khoản Edly';
+    return 'Tài khoản Edupen';
   }
 
   static int _readInt(dynamic value) {

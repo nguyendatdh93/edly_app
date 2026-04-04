@@ -606,7 +606,7 @@ class _DrawerProfileCard extends StatelessWidget {
                 Text(
                   user?.name.isNotEmpty == true
                       ? user!.name
-                      : 'Khám phá khóa học Edly',
+                      : 'Khám phá khóa học Edupen',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: HomePalette.textPrimary,
                     fontWeight: FontWeight.w700,

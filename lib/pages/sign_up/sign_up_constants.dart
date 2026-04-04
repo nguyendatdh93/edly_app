@@ -14,7 +14,7 @@ class SignUpPalette {
 
 /// Chứa toàn bộ text và đường dẫn asset của màn đăng ký.
 class SignUpContent {
-  static const String appName = 'Edly';
+  static const String appName = 'Edupen';
   static const String title = 'Đăng ký';
   static const String subtitle = 'Tạo tài khoản mới để bắt đầu';
   static const String fullNameLabel = 'Họ và tên';
