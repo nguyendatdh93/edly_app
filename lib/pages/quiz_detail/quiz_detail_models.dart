@@ -46,6 +46,7 @@ class QuizSummary {
     required this.price,
     required this.status,
     required this.questionCount,
+    required this.variant,
     required this.updatedAt,
     required this.modules,
   });
@@ -58,6 +59,7 @@ class QuizSummary {
   final int price;
   final String status;
   final int questionCount;
+  final String variant;
   final DateTime? updatedAt;
   final List<QuizStructureModule> modules;
 
@@ -76,6 +78,7 @@ class QuizSummary {
       price: _asInt(json['price']),
       status: _asStr(json['status']),
       questionCount: _asInt(json['question_count']),
+      variant: _asStr(json['variant']),
       updatedAt: DateTime.tryParse(_asStr(json['updated_at'])),
       modules: modulesRaw is List
           ? modulesRaw
@@ -317,10 +320,14 @@ class QuizRoomData {
   const QuizRoomData({
     required this.quiz,
     required this.course,
+    required this.variant,
     required this.mode,
     required this.isExam,
     required this.questions,
     required this.modules,
+    required this.questionIds,
+    required this.optionOrders,
+    required this.submitEndpoint,
     required this.examEndpoint,
     required this.exerciseEndpoint,
     required this.resultEndpointTemplate,
@@ -328,10 +335,14 @@ class QuizRoomData {
 
   final QuizSummary quiz;
   final QuizCourseSummary? course;
+  final String variant;
   final String mode;
   final bool isExam;
   final List<QuizQuestion> questions;
-  final List<QuizModule> modules;
+  final List<QuizRoomModule> modules;
+  final List<String> questionIds;
+  final Map<String, List<String>> optionOrders;
+  final String submitEndpoint;
   final String examEndpoint;
   final String exerciseEndpoint;
   final String resultEndpointTemplate;
@@ -347,6 +358,9 @@ class QuizRoomData {
       course: _asMap(json['course']).isEmpty
           ? null
           : QuizCourseSummary.fromJson(_asMap(json['course'])),
+      variant: _asStr(room['variant']).isNotEmpty
+          ? _asStr(room['variant'])
+          : _asStr(_asMap(json['quiz'])['variant']),
       mode: _asStr(room['mode']),
       isExam: room['is_exam'] == true,
       questions: questionRaw is List
@@ -363,10 +377,13 @@ class QuizRoomData {
                 .whereType<Map>()
                 .map(
                   (item) =>
-                      QuizModule.fromJson(Map<String, dynamic>.from(item)),
+                      QuizRoomModule.fromJson(Map<String, dynamic>.from(item)),
                 )
                 .toList()
           : const [],
+      questionIds: _asStringList(room['question_ids']),
+      optionOrders: _readOptionOrderMap(room['option_orders']),
+      submitEndpoint: _asStr(roomSubmission['submit_endpoint']),
       examEndpoint: _asStr(roomSubmission['exam_endpoint']),
       exerciseEndpoint: _asStr(roomSubmission['exercise_endpoint']),
       resultEndpointTemplate: _asStr(
@@ -376,22 +393,75 @@ class QuizRoomData {
   }
 }
 
-class QuizModule {
-  const QuizModule({
+class QuizRoomModule {
+  const QuizRoomModule({
     required this.id,
     required this.name,
     required this.minute,
+    required this.level,
+    required this.parentId,
+    required this.questions,
+    required this.children,
   });
 
   final String id;
   final String name;
   final int minute;
+  final int level;
+  final String parentId;
+  final List<QuizQuestion> questions;
+  final List<QuizRoomModule> children;
 
-  factory QuizModule.fromJson(Map<String, dynamic> json) {
-    return QuizModule(
+  bool get hasQuestionsRecursively {
+    if (questions.isNotEmpty) {
+      return true;
+    }
+    for (final child in children) {
+      if (child.hasQuestionsRecursively) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  List<String> collectQuestionIds() {
+    final ids = <String>[
+      ...questions.map((item) => item.id).where((id) => id.isNotEmpty),
+    ];
+    for (final child in children) {
+      ids.addAll(child.collectQuestionIds());
+    }
+    return ids;
+  }
+
+  factory QuizRoomModule.fromJson(Map<String, dynamic> json) {
+    final questionsRaw = json['questions'];
+    final childrenRaw = json['children'];
+
+    return QuizRoomModule(
       id: _asStr(json['id']),
       name: _asStr(json['name']),
       minute: _asInt(json['minute'] ?? json['minutes']),
+      level: _asInt(json['level']),
+      parentId: _asStr(json['parent_id']),
+      questions: questionsRaw is List
+          ? questionsRaw
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      QuizQuestion.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : const [],
+      children: childrenRaw is List
+          ? childrenRaw
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      QuizRoomModule.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : const [],
     );
   }
 }
@@ -526,10 +596,17 @@ class QuizImageAsset {
 }
 
 class QuizSubmitResult {
-  const QuizSubmitResult({required this.uuid, required this.redirectUrl});
+  const QuizSubmitResult({
+    required this.resultId,
+    required this.redirectUrl,
+    required this.resultEndpoint,
+  });
 
-  final String uuid;
+  final String resultId;
   final String redirectUrl;
+  final String resultEndpoint;
+
+  String get uuid => resultId;
 }
 
 class QuizResultData {
@@ -537,6 +614,7 @@ class QuizResultData {
     required this.uuid,
     required this.type,
     required this.submissionType,
+    required this.variant,
     required this.score,
     required this.answers,
     required this.questions,
@@ -552,6 +630,7 @@ class QuizResultData {
   final String uuid;
   final String type;
   final String submissionType;
+  final String variant;
   final QuizScore score;
   final List<Map<String, dynamic>> answers;
   final List<QuizQuestion> questions;
@@ -566,6 +645,7 @@ class QuizResultData {
   factory QuizResultData.fromJson(Map<String, dynamic> json) {
     final result = _asMap(json['result']);
     final quiz = _asMap(json['quiz']);
+    final meta = _asMap(json['meta']);
     final answers = result['answers'];
     final questionsRaw = json['questions'];
 
@@ -573,6 +653,7 @@ class QuizResultData {
       uuid: _asStr(result['uuid']),
       type: _asStr(result['type']),
       submissionType: _asStr(result['stype']),
+      variant: _asStr(meta['variant']),
       score: QuizScore.fromJson(_asMap(result['score'])),
       answers: answers is List
           ? answers
@@ -606,7 +687,8 @@ int _asInt(dynamic value) {
   if (value == null) return 0;
   if (value is int) return value;
   if (value is num) return value.toInt();
-  return int.tryParse(value.toString()) ?? 0;
+  final text = value.toString();
+  return int.tryParse(text) ?? num.tryParse(text)?.toInt() ?? 0;
 }
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -666,4 +748,20 @@ Map<String, int?> _readNullableIntMap(dynamic value) {
     }
     return MapEntry(key.toString(), int.tryParse(item.toString()));
   });
+}
+
+Map<String, List<String>> _readOptionOrderMap(dynamic value) {
+  if (value is! Map) {
+    return const {};
+  }
+
+  final result = <String, List<String>>{};
+  for (final entry in value.entries) {
+    final key = entry.key.toString().trim();
+    if (key.isEmpty) {
+      continue;
+    }
+    result[key] = _asStringList(entry.value);
+  }
+  return result;
 }

@@ -8,13 +8,17 @@ class QuizCongratulationsView extends StatefulWidget {
   const QuizCongratulationsView({
     super.key,
     required this.resultUuid,
+    required this.quizId,
     required this.quizName,
     required this.questionCount,
+    this.resultEndpointTemplate,
   });
 
   final String resultUuid;
+  final String quizId;
   final String quizName;
   final int questionCount;
+  final String? resultEndpointTemplate;
 
   @override
   State<QuizCongratulationsView> createState() =>
@@ -36,6 +40,8 @@ class _QuizCongratulationsViewState extends State<QuizCongratulationsView> {
     try {
       final result = await QuizDetailRepository.instance.fetchResult(
         widget.resultUuid,
+        quizId: widget.quizId,
+        endpointTemplate: widget.resultEndpointTemplate,
       );
       if (!mounted) {
         return;
