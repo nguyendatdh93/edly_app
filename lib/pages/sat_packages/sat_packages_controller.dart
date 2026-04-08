@@ -54,7 +54,31 @@ class SatPackagesController extends ChangeNotifier {
   }
 
   void selectSection(String? slug) {
-    selectedSectionSlug = slug;
+    final normalized = slug?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      selectedSectionSlug = null;
+      notifyListeners();
+      return;
+    }
+
+    for (final section in sections) {
+      if (section.slug.toLowerCase() == normalized.toLowerCase()) {
+        selectedSectionSlug = section.slug;
+        notifyListeners();
+        return;
+      }
+    }
+
+    for (final section in sections) {
+      final signature = '${section.slug} ${section.title}'.toLowerCase();
+      if (signature.contains(normalized.toLowerCase())) {
+        selectedSectionSlug = section.slug;
+        notifyListeners();
+        return;
+      }
+    }
+
+    selectedSectionSlug = null;
     notifyListeners();
   }
 }

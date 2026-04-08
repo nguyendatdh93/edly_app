@@ -5,7 +5,9 @@ import 'package:edupen/pages/ielts_packages/ielts_packages_controller.dart';
 import 'package:flutter/material.dart';
 
 class IeltsPackagesView extends StatefulWidget {
-  const IeltsPackagesView({super.key});
+  const IeltsPackagesView({super.key, this.initialSectionSlug});
+
+  final String? initialSectionSlug;
 
   @override
   State<IeltsPackagesView> createState() => _IeltsPackagesViewState();
@@ -33,7 +35,15 @@ class _IeltsPackagesViewState extends State<IeltsPackagesView> {
   void initState() {
     super.initState();
     _controller = IeltsPackagesController();
-    _controller.load();
+    final initialSectionSlug = widget.initialSectionSlug?.trim();
+    _controller.load().then((_) {
+      if (!mounted) {
+        return;
+      }
+      if (initialSectionSlug != null && initialSectionSlug.isNotEmpty) {
+        _controller.selectSection(initialSectionSlug);
+      }
+    });
   }
 
   @override

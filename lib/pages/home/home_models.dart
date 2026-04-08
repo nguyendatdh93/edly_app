@@ -46,11 +46,57 @@ class HomeDashboardData {
     return value
         .whereType<Map>()
         .map(
-          (item) => HomeCategorySection.fromJson(
-            Map<String, dynamic>.from(item),
-          ),
+          (item) =>
+              HomeCategorySection.fromJson(Map<String, dynamic>.from(item)),
         )
         .toList();
+  }
+}
+
+class HomeCollectionMenuItem {
+  const HomeCollectionMenuItem({
+    required this.id,
+    required this.title,
+    required this.slug,
+    required this.children,
+  });
+
+  final String id;
+  final String title;
+  final String slug;
+  final List<HomeCollectionMenuItem> children;
+
+  factory HomeCollectionMenuItem.fromJson(Map<String, dynamic> json) {
+    return HomeCollectionMenuItem(
+      id: _readString(json['id']),
+      title: _readString(json['title']),
+      slug: _readString(json['slug']),
+      children: _readMenuChildren(
+        json['children_recursive'] ??
+            json['childrenRecursive'] ??
+            json['children'],
+      ),
+    );
+  }
+
+  bool get hasChildren => children.isNotEmpty;
+
+  static List<HomeCollectionMenuItem> readList(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    return value
+        .whereType<Map>()
+        .map(
+          (item) =>
+              HomeCollectionMenuItem.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList();
+  }
+
+  static List<HomeCollectionMenuItem> _readMenuChildren(dynamic value) {
+    return readList(value);
   }
 }
 
@@ -134,13 +180,12 @@ class HomeCategorySection {
       viewAllUrl: _readNullableString(json['view_all_url']),
       courses: rawCourses is List
           ? rawCourses
-              .whereType<Map>()
-              .map(
-                (item) => HomeCourseItem.fromJson(
-                  Map<String, dynamic>.from(item),
-                ),
-              )
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      HomeCourseItem.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
           : const [],
     );
   }

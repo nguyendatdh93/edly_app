@@ -5,7 +5,9 @@ import 'package:edupen/pages/sat_packages/sat_packages_controller.dart';
 import 'package:flutter/material.dart';
 
 class SatPackagesView extends StatefulWidget {
-  const SatPackagesView({super.key});
+  const SatPackagesView({super.key, this.initialSectionSlug});
+
+  final String? initialSectionSlug;
 
   @override
   State<SatPackagesView> createState() => _SatPackagesViewState();
@@ -33,7 +35,15 @@ class _SatPackagesViewState extends State<SatPackagesView> {
   void initState() {
     super.initState();
     _controller = SatPackagesController();
-    _controller.load();
+    final initialSectionSlug = widget.initialSectionSlug?.trim();
+    _controller.load().then((_) {
+      if (!mounted) {
+        return;
+      }
+      if (initialSectionSlug != null && initialSectionSlug.isNotEmpty) {
+        _controller.selectSection(initialSectionSlug);
+      }
+    });
   }
 
   @override

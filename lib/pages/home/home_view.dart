@@ -25,11 +25,13 @@ class _HomeViewState extends State<HomeView> {
   Timer? _slideTimer;
   int _currentSlide = 0;
   late Future<HomeDashboardData> _dashboardFuture;
+  late Future<List<HomeCollectionMenuItem>> _drawerMenuFuture;
 
   @override
   void initState() {
     super.initState();
     _dashboardFuture = HomeRepository.instance.fetchDashboard();
+    _drawerMenuFuture = HomeRepository.instance.fetchCollectionMenu();
     _startAutoSlide();
   }
 
@@ -46,16 +48,36 @@ class _HomeViewState extends State<HomeView> {
     } catch (_) {
       // Nếu refresh user lỗi thì vẫn thử tải dashboard.
     }
-    final future = HomeRepository.instance.fetchDashboard();
+    final dashboardFuture = HomeRepository.instance.fetchDashboard();
+    final drawerMenuFuture = HomeRepository.instance.fetchCollectionMenu();
 
     setState(() {
-      _dashboardFuture = future;
+      _dashboardFuture = dashboardFuture;
+      _drawerMenuFuture = drawerMenuFuture;
+    });
+
+    try {
+      await dashboardFuture;
+    } catch (_) {
+      // FutureBuilder sẽ render trạng thái lỗi.
+    }
+    try {
+      await drawerMenuFuture;
+    } catch (_) {
+      // Drawer sẽ render trạng thái lỗi.
+    }
+  }
+
+  Future<void> _reloadDrawerMenu() async {
+    final future = HomeRepository.instance.fetchCollectionMenu();
+    setState(() {
+      _drawerMenuFuture = future;
     });
 
     try {
       await future;
     } catch (_) {
-      // FutureBuilder sẽ render trạng thái lỗi.
+      // Drawer sẽ render trạng thái lỗi.
     }
   }
 
@@ -113,7 +135,10 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomePalette.background,
-      drawer: const _HomeDrawer(),
+      drawer: _HomeDrawer(
+        menuFuture: _drawerMenuFuture,
+        onReloadMenu: _reloadDrawerMenu,
+      ),
       body: Builder(
         builder: (context) {
           return RefreshIndicator(
@@ -377,7 +402,10 @@ class _HomeSections extends StatelessWidget {
 }
 
 class _HomeDrawer extends StatelessWidget {
-  const _HomeDrawer();
+  const _HomeDrawer({required this.menuFuture, required this.onReloadMenu});
+
+  final Future<List<HomeCollectionMenuItem>> menuFuture;
+  final Future<void> Function() onReloadMenu;
 
   Future<void> _openAccountProfile(BuildContext context) async {
     final navigator = Navigator.of(context);
@@ -401,24 +429,29 @@ class _HomeDrawer extends StatelessWidget {
 
   Future<void> _openDrawerDestination(
     BuildContext context,
-    HomeDrawerItemData item,
-  ) async {
-    final title = item.title.trim().toLowerCase();
+    HomeCollectionMenuItem item, {
+    String? sectionSlug,
+  }) async {
+    final signature = '${item.slug} ${item.title}'.trim().toLowerCase();
 
-    if (title == 'sat' || title == 'sat/act' || title.contains('sat')) {
+    if (_isSatCategory(signature)) {
       final navigator = Navigator.of(context);
       navigator.pop();
       await navigator.push(
-        MaterialPageRoute<void>(builder: (_) => const SatPackagesView()),
+        MaterialPageRoute<void>(
+          builder: (_) => SatPackagesView(initialSectionSlug: sectionSlug),
+        ),
       );
       return;
     }
 
-    if (title == 'ielts' || title.contains('ielts')) {
+    if (_isIeltsCategory(signature)) {
       final navigator = Navigator.of(context);
       navigator.pop();
       await navigator.push(
-        MaterialPageRoute<void>(builder: (_) => const IeltsPackagesView()),
+        MaterialPageRoute<void>(
+          builder: (_) => IeltsPackagesView(initialSectionSlug: sectionSlug),
+        ),
       );
       return;
     }
@@ -428,11 +461,246 @@ class _HomeDrawer extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Mục "${item.title}" đang được build native trên app, tạm thời chưa mở.',
+            'Mục "${item.title}" đã đồng bộ từ API, đang chờ màn native để mở chi tiết.',
           ),
         ),
       );
     }
+  }
+
+  bool _isSatCategory(String value) {
+    final normalized = value.toLowerCase();
+    if (normalized.contains('sat')) {
+      return true;
+    }
+    return RegExp(r'\bact\b').hasMatch(normalized);
+  }
+
+  bool _isIeltsCategory(String value) {
+    return value.contains('ielts');
+  }
+
+  IconData _iconForMenuItem(
+    HomeCollectionMenuItem item, {
+    required bool isParent,
+  }) {
+    final signature = '${item.slug} ${item.title}'.trim().toLowerCase();
+    if (_isIeltsCategory(signature)) {
+      return Icons.language_rounded;
+    }
+    if (_isSatCategory(signature)) {
+      return Icons.auto_awesome_rounded;
+    }
+    if (signature.contains('miễn phí') || signature.contains('free')) {
+      return Icons.menu_book_rounded;
+    }
+    if (signature.contains('bài viết') || signature.contains('blog')) {
+      return Icons.article_outlined;
+    }
+    if (signature.contains('giáo viên') || signature.contains('teacher')) {
+      return Icons.person_outline_rounded;
+    }
+    return isParent ? Icons.folder_outlined : Icons.subdirectory_arrow_right;
+  }
+
+  List<Widget> _buildMenuTree(
+    BuildContext context,
+    List<HomeCollectionMenuItem> items, {
+    int depth = 0,
+  }) {
+    final widgets = <Widget>[];
+    for (final item in items) {
+      if (item.hasChildren) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                key: PageStorageKey<String>(
+                  'home-drawer-${item.id}-${item.slug}-$depth',
+                ),
+                tilePadding: EdgeInsets.only(left: 12 + depth * 14, right: 10),
+                childrenPadding: const EdgeInsets.only(bottom: 4),
+                iconColor: HomePalette.textMuted,
+                collapsedIconColor: HomePalette.textMuted,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                collapsedShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                backgroundColor: HomePalette.chipBlue.withValues(alpha: 0.45),
+                leading: Icon(
+                  _iconForMenuItem(item, isParent: true),
+                  color: HomePalette.primary,
+                ),
+                title: Text(
+                  item.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: HomePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildLeafTile(
+                      context,
+                      item,
+                      depth: depth + 1,
+                      titleOverride: 'Tất cả ${item.title}',
+                      iconOverride: Icons.dashboard_customize_outlined,
+                      sectionSlug: null,
+                    ),
+                  ),
+                  ..._buildMenuTree(context, item.children, depth: depth + 1),
+                ],
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildLeafTile(context, item, depth: depth),
+        ),
+      );
+    }
+
+    widgets.addAll([
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildStaticRouteTile(
+          context,
+          title: 'Trang giáo viên',
+          icon: Icons.person_outline_rounded,
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.pushNamed(context, '/teacher');
+          },
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildStaticRouteTile(
+          context,
+          title: 'Bài viết',
+          icon: Icons.article_outlined,
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.pushNamed(context, '/posts');
+          },
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildStaticRouteTile(
+          context,
+          title: 'Miễn phí SAT',
+          icon: Icons.menu_book_rounded,
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.pushNamed(context, '/free-sat');
+          },
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildStaticRouteTile(
+          context,
+          title: 'Miễn phí IELTS',
+          icon: Icons.school_outlined,
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.pushNamed(context, '/free-ielts');
+          },
+        ),
+      ),
+    ]);
+    return widgets;
+  }
+
+  Widget _buildStaticRouteTile(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.only(left: 14, right: 10),
+        leading: Icon(icon, color: HomePalette.primary, size: 22),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: HomePalette.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: HomePalette.textMuted,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  Widget _buildLeafTile(
+    BuildContext context,
+    HomeCollectionMenuItem item, {
+    required int depth,
+    String? titleOverride,
+    IconData? iconOverride,
+    String? sectionSlug,
+  }) {
+    final title = (titleOverride ?? item.title).trim();
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: ListTile(
+        onTap: () => _openDrawerDestination(
+          context,
+          item,
+          sectionSlug: sectionSlug ?? item.slug,
+        ),
+        contentPadding: EdgeInsets.only(left: 14 + depth * 14, right: 10),
+        leading: Icon(
+          iconOverride ?? _iconForMenuItem(item, isParent: false),
+          color: HomePalette.primary,
+          size: depth == 0 ? 22 : 20,
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: HomePalette.textPrimary,
+            fontWeight: depth == 0 ? FontWeight.w600 : FontWeight.w500,
+            fontSize: depth == 0 ? null : 14,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: HomePalette.textMuted,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  String _messageFromMenuError(Object? error) {
+    if (error is AppException && error.message.trim().isNotEmpty) {
+      return error.message;
+    }
+    return 'Không thể tải danh mục từ API.';
   }
 
   @override
@@ -498,31 +766,55 @@ class _HomeDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: HomeContent.drawerItems.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final item = HomeContent.drawerItems[index];
-                    return ListTile(
-                      onTap: () => _openDrawerDestination(context, item),
-                      leading: Icon(item.icon, color: HomePalette.primary),
-                      title: Text(
-                        item.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: HomePalette.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      trailing: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: HomePalette.textMuted,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                child: FutureBuilder<List<HomeCollectionMenuItem>>(
+                  future: menuFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return _DrawerMenuStatus(
+                        icon: Icons.error_outline_rounded,
+                        message: _messageFromMenuError(snapshot.error),
+                        actionLabel: 'Thử lại',
+                        onAction: onReloadMenu,
+                      );
+                    }
+
+                    final menuItems = snapshot.data ?? const [];
+                    if (menuItems.isEmpty) {
+                      return _DrawerMenuStatus(
+                        icon: Icons.menu_open_rounded,
+                        message: 'Chưa có danh mục nào để hiển thị.',
+                        actionLabel: 'Tải lại',
+                        onAction: onReloadMenu,
+                      );
+                    }
+
+                    return ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            'Danh mục',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: HomePalette.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._buildMenuTree(context, menuItems),
+                      ],
                     );
                   },
                 ),
@@ -550,6 +842,48 @@ class _HomeDrawer extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerMenuStatus extends StatelessWidget {
+  const _DrawerMenuStatus({
+    required this.icon,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String message;
+  final String actionLabel;
+  final Future<void> Function() onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: HomePalette.textSecondary),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: HomePalette.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () async => onAction(),
+              child: Text(actionLabel),
+            ),
+          ],
         ),
       ),
     );

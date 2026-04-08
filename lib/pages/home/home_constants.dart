@@ -21,15 +21,6 @@ class HomeContent {
   static const String logoAsset = 'assets/images/edupen-logo.png';
   static const String searchHint = 'Tìm kiếm khóa học, bài viết...';
 
-  static const List<HomeDrawerItemData> drawerItems = [
-    HomeDrawerItemData('IELTS', Icons.language_rounded),
-    HomeDrawerItemData('SAT', Icons.auto_awesome_rounded),
-    HomeDrawerItemData('Trang giáo viên', Icons.person_outline_rounded),
-    HomeDrawerItemData('Bài viết', Icons.article_outlined),
-    HomeDrawerItemData('Miễn phí SAT', Icons.menu_book_rounded),
-    HomeDrawerItemData('Miễn phí IELTS', Icons.school_outlined),
-  ];
-
   static const List<HomeHeroSlideData> slides = [
     HomeHeroSlideData(
       title: 'Luyện đề ĐGNL 2025',
@@ -61,13 +52,6 @@ class HomeContent {
   ];
 
   const HomeContent._();
-}
-
-class HomeDrawerItemData {
-  const HomeDrawerItemData(this.title, this.icon);
-
-  final String title;
-  final IconData icon;
 }
 
 class HomeHeroSlideData {

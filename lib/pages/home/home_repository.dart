@@ -6,19 +6,17 @@ import 'package:edupen/services/auth_repository.dart';
 
 class HomeRepository {
   HomeRepository._internal()
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: ApiConfig.baseUrl,
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
-            sendTimeout: const Duration(seconds: 15),
-            headers: const {
-              'Accept': 'application/json',
-            },
-            contentType: Headers.jsonContentType,
-            responseType: ResponseType.json,
-          ),
-        );
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: ApiConfig.baseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
+          headers: const {'Accept': 'application/json'},
+          contentType: Headers.jsonContentType,
+          responseType: ResponseType.json,
+        ),
+      );
 
   static final HomeRepository instance = HomeRepository._internal();
 
@@ -60,6 +58,42 @@ class HomeRepository {
     }
   }
 
+  Future<List<HomeCollectionMenuItem>> fetchCollectionMenu() async {
+    final token = AuthRepository.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      throw const AppException('Bạn cần đăng nhập lại để tải danh mục.');
+    }
+
+    try {
+      final response = await _dio.get<dynamic>(
+        '/mobile/collection/list-menu',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      final payload = _normalizeMap(response.data);
+      final data = payload['data'];
+      if (data is List) {
+        return HomeCollectionMenuItem.readList(data);
+      }
+
+      if (response.data is List) {
+        return HomeCollectionMenuItem.readList(response.data);
+      }
+
+      throw const AppException('Dữ liệu danh mục không hợp lệ.');
+    } on DioException catch (error) {
+      throw AppException(
+        _messageFromError(error),
+        statusCode: error.response?.statusCode,
+      );
+    }
+  }
+
   String _messageFromError(DioException error) {
     final data = error.response?.data;
     if (data is Map) {
@@ -79,5 +113,15 @@ class HomeRepository {
       default:
         return 'Không thể tải dữ liệu trang chủ.';
     }
+  }
+
+  Map<String, dynamic> _normalizeMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return value.map((key, item) => MapEntry(key.toString(), item));
+    }
+    return const {};
   }
 }
