@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:edupen/pages/course_detail/course_detail_view.dart';
 import 'package:edupen/core/network/app_exception.dart';
 import 'package:edupen/pages/account_profile/account_profile_view.dart';
+import 'package:edupen/pages/home/collection_courses_view.dart';
 import 'package:edupen/pages/home/home_constants.dart';
 import 'package:edupen/pages/home/home_models.dart';
 import 'package:edupen/pages/home/home_repository.dart';
-import 'package:edupen/pages/ielts_packages/ielts_packages_view.dart';
-import 'package:edupen/pages/sat_packages/sat_packages_view.dart';
 import 'package:edupen/pages/sign_in/sign_in_view.dart';
 import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -432,52 +431,29 @@ class _HomeDrawer extends StatelessWidget {
     HomeCollectionMenuItem item, {
     String? sectionSlug,
   }) async {
-    final signature = '${item.slug} ${item.title}'.trim().toLowerCase();
-
-    if (_isSatCategory(signature)) {
-      final navigator = Navigator.of(context);
-      navigator.pop();
-      await navigator.push(
-        MaterialPageRoute<void>(
-          builder: (_) => SatPackagesView(initialSectionSlug: sectionSlug),
-        ),
-      );
-      return;
-    }
-
-    if (_isIeltsCategory(signature)) {
-      final navigator = Navigator.of(context);
-      navigator.pop();
-      await navigator.push(
-        MaterialPageRoute<void>(
-          builder: (_) => IeltsPackagesView(initialSectionSlug: sectionSlug),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).pop();
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Mục "${item.title}" đã đồng bộ từ API, đang chờ màn native để mở chi tiết.',
+    final slug = (sectionSlug ?? item.slug).trim();
+    if (slug.isEmpty) {
+      Navigator.of(context).pop();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Danh mục chưa có slug hợp lệ để mở chi tiết.'),
           ),
+        );
+      }
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => CollectionCoursesView(
+          collectionSlug: slug,
+          collectionTitle: item.title,
         ),
-      );
-    }
-  }
-
-  bool _isSatCategory(String value) {
-    final normalized = value.toLowerCase();
-    if (normalized.contains('sat')) {
-      return true;
-    }
-    return RegExp(r'\bact\b').hasMatch(normalized);
-  }
-
-  bool _isIeltsCategory(String value) {
-    return value.contains('ielts');
+      ),
+    );
   }
 
   IconData _iconForMenuItem(
@@ -485,10 +461,10 @@ class _HomeDrawer extends StatelessWidget {
     required bool isParent,
   }) {
     final signature = '${item.slug} ${item.title}'.trim().toLowerCase();
-    if (_isIeltsCategory(signature)) {
+    if (signature.contains('ielts')) {
       return Icons.language_rounded;
     }
-    if (_isSatCategory(signature)) {
+    if (signature.contains('sat') || RegExp(r'\bact\b').hasMatch(signature)) {
       return Icons.auto_awesome_rounded;
     }
     if (signature.contains('miễn phí') || signature.contains('free')) {

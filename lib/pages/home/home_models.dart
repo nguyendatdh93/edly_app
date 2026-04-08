@@ -100,6 +100,63 @@ class HomeCollectionMenuItem {
   }
 }
 
+class HomeCollectionCourseListData {
+  const HomeCollectionCourseListData({
+    required this.collection,
+    required this.courses,
+  });
+
+  final HomeCollectionSummary collection;
+  final List<HomeCourseItem> courses;
+
+  factory HomeCollectionCourseListData.fromJson(Map<String, dynamic> json) {
+    final collectionRaw = json['collection'] ?? json['root'];
+    final coursesRaw = json['courses'] ?? json['all_courses'];
+
+    return HomeCollectionCourseListData(
+      collection: HomeCollectionSummary.fromJson(
+        collectionRaw is Map<String, dynamic>
+            ? collectionRaw
+            : collectionRaw is Map
+            ? collectionRaw.map((key, value) => MapEntry(key.toString(), value))
+            : const {},
+      ),
+      courses: coursesRaw is List
+          ? coursesRaw
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      HomeCourseItem.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class HomeCollectionSummary {
+  const HomeCollectionSummary({
+    required this.id,
+    required this.title,
+    required this.slug,
+    required this.description,
+  });
+
+  final String id;
+  final String title;
+  final String slug;
+  final String description;
+
+  factory HomeCollectionSummary.fromJson(Map<String, dynamic> json) {
+    return HomeCollectionSummary(
+      id: _readString(json['id']),
+      title: _readString(json['title']),
+      slug: _readString(json['slug']),
+      description: _readString(json['description']),
+    );
+  }
+}
+
 class HomeCourseItem {
   const HomeCourseItem({
     required this.id,
