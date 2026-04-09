@@ -87,11 +87,11 @@ class _SingleChoiceOption extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 5),
             Expanded(
               child: DefaultRoomHtmlView(
                 html: content,
-                fontSize: 16,
+                fontSize: 10,
                 minHeight: 26,
                 maxAutoHeight: 320,
               ),

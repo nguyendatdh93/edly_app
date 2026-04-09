@@ -61,45 +61,12 @@ class DefaultRoomQuestionCard extends StatelessWidget {
           width: double.infinity,
           height: hasBoundedHeight ? constraints.maxHeight : null,
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
+          decoration: BoxDecoration(color: Colors.white),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Câu $displayLabel/$totalQuestions',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ),
-                  if (showBookmark)
-                    IconButton(
-                      onPressed: () {
-                        answerState.toggleMarked(question.id);
-                        onChanged();
-                      },
-                      tooltip: 'Đánh dấu câu hỏi',
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(
-                        answerState.isMarked(question.id)
-                            ? Icons.bookmark_rounded
-                            : Icons.bookmark_border_rounded,
-                        color: const Color(0xFFF59E0B),
-                        size: 22,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
+              
+              const SizedBox(height: 5),
               if (hasBoundedHeight) Expanded(child: content) else content,
             ],
           ),
@@ -117,18 +84,14 @@ class DefaultRoomQuestionCard extends StatelessWidget {
       children: [
         Expanded(
           flex: 11,
-          child: _SplitPanel(
-            title: 'Nội dung câu hỏi',
+          child: _SplitPanel( 
             child: _buildQuestionHtmlPane(questionHtml),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           flex: 12,
-          child: _SplitPanel(
-            title: isComprehensionWithChildren
-                ? 'Danh sách câu hỏi con'
-                : 'Trả lời',
+          child: _SplitPanel( 
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: isComprehensionWithChildren
@@ -149,17 +112,13 @@ class DefaultRoomQuestionCard extends StatelessWidget {
       children: [
         SizedBox(
           height: 180,
-          child: _SplitPanel(
-            title: 'Nội dung câu hỏi',
+          child: _SplitPanel( 
             child: _buildQuestionHtmlPane(questionHtml),
           ),
         ),
         const SizedBox(height: 8),
         Expanded(
-          child: _SplitPanel(
-            title: isComprehensionWithChildren
-                ? 'Danh sách câu hỏi con'
-                : 'Trả lời',
+          child: _SplitPanel( 
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: isComprehensionWithChildren
@@ -180,7 +139,7 @@ class DefaultRoomQuestionCard extends StatelessWidget {
     return DefaultRoomHtmlView(
       html: safeHtml,
       mode: DefaultRoomHtmlViewMode.fill,
-      fontSize: 18,
+      fontSize: 10,
       minHeight: 120,
     );
   }
@@ -366,15 +325,14 @@ class DefaultRoomQuestionCard extends StatelessWidget {
 }
 
 class _SplitPanel extends StatelessWidget {
-  const _SplitPanel({required this.title, required this.child});
+  const _SplitPanel({required this.child});
 
-  final String title;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
@@ -383,14 +341,6 @@ class _SplitPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF0F172A),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
           const SizedBox(height: 6),
           Expanded(child: child),
         ],

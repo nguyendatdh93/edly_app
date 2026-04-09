@@ -313,7 +313,7 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
             else
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                   child: DefaultRoomQuestionCard(
                     question: question,
                     questionNumber: _currentIndex + 1,

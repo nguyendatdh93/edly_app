@@ -21,7 +21,7 @@ class DefaultRoomNavigate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 30,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: questions.length,
@@ -42,20 +42,20 @@ class DefaultRoomNavigate extends StatelessWidget {
             onTap: () => onTap(index),
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              width: 34,
-              height: 34,
+              width: 28,
+              height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
+                shape: BoxShape.circle, // đảm bảo tròn tuyệt đối
                 color: style.background,
-                borderRadius: BorderRadius.circular(17),
                 border: Border.all(color: style.border),
               ),
               child: Text(
                 '${index + 1}',
                 style: TextStyle(
                   color: style.foreground,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12, // nhỏ lại cho cân
                 ),
               ),
             ),

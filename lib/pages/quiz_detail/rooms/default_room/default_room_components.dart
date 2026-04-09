@@ -152,7 +152,7 @@ class DefaultRoomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseHeight = compact ? 30.0 : 34.0;
+    final baseHeight = compact ? 14.0 : 15.0;
     final textSize = compact ? 11.0 : 12.0;
     final tinyGap = compact ? 4.0 : 6.0;
 
@@ -174,7 +174,7 @@ class DefaultRoomActionBar extends StatelessWidget {
               fontSize: textSize,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 2),
           Expanded(
             child: Align(
               alignment: Alignment.centerRight,
@@ -182,43 +182,12 @@ class DefaultRoomActionBar extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _MiniActionButton(
-                      icon: Icons.menu_book_rounded,
-                      label: 'Directions',
-                      onTap: onDirections,
-                      height: baseHeight,
-                      compact: compact,
-                    ),
-                    SizedBox(width: tinyGap),
-                    _MiniActionButton(
-                      icon: Icons.calculate_rounded,
-                      label: 'Calculator',
-                      onTap: onCalculator,
-                      height: baseHeight,
-                      compact: compact,
-                    ),
-                    SizedBox(width: tinyGap),
-                    _MiniActionButton(
-                      icon: Icons.library_books_rounded,
-                      label: 'Reference',
-                      onTap: onReference,
-                      height: baseHeight,
-                      compact: compact,
-                    ),
-                    SizedBox(width: tinyGap),
-                    _MiniActionButton(
-                      icon: Icons.grid_view_rounded,
-                      label: 'Question Board',
-                      onTap: onQuestionBoard,
-                      height: baseHeight,
-                      compact: compact,
-                    ),
                     SizedBox(width: tinyGap),
                     _MiniActionButton(
                       icon: isCurrentBookmarked
                           ? Icons.bookmark_rounded
                           : Icons.bookmark_border_rounded,
-                      label: 'Bookmark',
+                      label: 'Đánh dấu',
                       onTap: onBookmark,
                       selected: isCurrentBookmarked,
                       height: baseHeight,
@@ -229,7 +198,7 @@ class DefaultRoomActionBar extends StatelessWidget {
                       icon: isTimerVisible
                           ? Icons.timer_off_rounded
                           : Icons.timer_rounded,
-                      label: 'Timer',
+                      label: 'Thời gian',
                       onTap: onToggleTimer,
                       selected: isTimerVisible,
                       height: baseHeight,
@@ -238,7 +207,7 @@ class DefaultRoomActionBar extends StatelessWidget {
                     SizedBox(width: tinyGap),
                     _MiniActionButton(
                       icon: Icons.arrow_back_rounded,
-                      label: 'Back',
+                      label: 'Sau',
                       onTap: canPrevious ? onPrevious : null,
                       height: baseHeight,
                       compact: compact,
@@ -248,7 +217,7 @@ class DefaultRoomActionBar extends StatelessWidget {
                       icon: canNext
                           ? Icons.arrow_forward_rounded
                           : Icons.send_rounded,
-                      label: canNext ? 'Next' : 'Submit',
+                      label: canNext ? 'Trước' : 'Nộp',
                       onTap: isSubmitting ? null : onNext,
                       height: baseHeight,
                       compact: compact,
