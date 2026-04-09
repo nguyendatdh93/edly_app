@@ -24,7 +24,7 @@ dependencies:
   xml: ^6.5.0
   webview_flutter: ^4.13.0
   pdfx: ^2.9.2
-  docx_viewer: ^1.0.1
+  docx_viewer: ^1.0.1 
 
 dev_dependencies:
   flutter_test:

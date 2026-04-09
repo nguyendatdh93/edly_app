@@ -1288,7 +1288,7 @@ class _SectionHeader extends StatelessWidget {
                           ?.copyWith(
                             fontWeight: FontWeight.w800,
                             color: HomePalette.textPrimary,
-                            fontSize: 28,
+                            fontSize: 20,
                           ),
                     ),
                   ),
