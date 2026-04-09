@@ -1,5 +1,5 @@
 import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
-import 'package:edupen/pages/quiz_detail/rooms/shared/quiz_room_helpers.dart';
+import 'package:edupen/pages/quiz_detail/rooms/default_room/widgets/html_math_view.dart';
 import 'package:flutter/material.dart';
 
 class SingleChoice extends StatelessWidget {
@@ -45,40 +45,68 @@ class _SingleChoiceOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prefix = String.fromCharCode(65 + index);
-    final content = stripHtml(option.content);
-    final label = content.isNotEmpty
-        ? '$prefix. $content'
-        : '$prefix. [Lựa chọn ${index + 1}]';
+    final prefix = _optionPrefix(index);
+    final content = option.content.trim().isNotEmpty
+        ? option.content
+        : '<p>[Lựa chọn ${index + 1}]</p>';
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(10),
+          color: selected ? const Color(0xFFEFF6FF) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected ? const Color(0xFF4F46E5) : const Color(0xFFCBD5E1),
+            color: selected ? const Color(0xFF93C5FD) : const Color(0xFFE5E7EB),
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              selected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              color: selected
-                  ? const Color(0xFF4F46E5)
-                  : const Color(0xFF64748B),
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? const Color(0xFF3B82F6) : Colors.white,
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFF3B82F6)
+                      : const Color(0xFFD1D5DB),
+                ),
+              ),
+              child: Text(
+                prefix,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : const Color(0xFF4B5563),
+                ),
+              ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: Text(label)),
+            Expanded(
+              child: DefaultRoomHtmlView(
+                html: content,
+                fontSize: 16,
+                minHeight: 26,
+                maxAutoHeight: 320,
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _optionPrefix(int optionIndex) {
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+    if (optionIndex >= 0 && optionIndex < labels.length) {
+      return labels[optionIndex];
+    }
+    return String.fromCharCode(65 + optionIndex);
   }
 }

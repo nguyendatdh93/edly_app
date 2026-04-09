@@ -7,7 +7,10 @@ import 'package:edupen/pages/quiz_detail/rooms/shared/quiz_room_helpers.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/navigate.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/question.dart';
 import 'package:edupen/pages/quiz_detail/rooms/shared/quiz_room_submitter.dart';
+import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class DefaultRoomView extends StatefulWidget {
   const DefaultRoomView({super.key, required this.room});
@@ -28,6 +31,7 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
   int _remainingSeconds = 0;
   int _currentIndex = 0;
   bool _isSubmitting = false;
+  bool _showTimer = true;
 
   @override
   void initState() {
@@ -36,12 +40,30 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
     _totalSeconds = resolveRoomDurationSeconds(widget.room);
     _remainingSeconds = _totalSeconds;
     _startTimer();
+    unawaited(_lockLandscapeOrientation());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(_unlockPortraitOrientation());
     super.dispose();
+  }
+
+  Future<void> _lockLandscapeOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
+
+  Future<void> _unlockPortraitOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   void _startTimer() {
@@ -151,6 +173,7 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
     setState(() {
       _currentIndex += 1;
     });
+    _scrollToTop();
   }
 
   void _goPrevious() {
@@ -160,22 +183,128 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
     setState(() {
       _currentIndex -= 1;
     });
+    _scrollToTop();
+  }
+
+  void _scrollToTop() {
+    // Nội dung trong card đã có vùng cuộn riêng nên không cần cuộn trang ngoài.
+  }
+
+  void _toggleCurrentBookmark() {
+    final current = _currentQuestion;
+    if (current == null) {
+      return;
+    }
+    _answerState.toggleMarked(current.id);
+    setState(() {});
+  }
+
+  void _toggleTimerVisibility() {
+    setState(() {
+      _showTimer = !_showTimer;
+    });
+  }
+
+  void _showDirections() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Directions'),
+        content: const Text(
+          'Đọc kỹ nội dung câu hỏi ở cột trái, chọn hoặc nhập đáp án ở cột phải, sau đó bấm Next để sang câu tiếp theo.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đã hiểu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCalculator() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Calculator sẽ được tích hợp chi tiết ở bản tiếp theo.'),
+      ),
+    );
+  }
+
+  void _showReference() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reference'),
+        content: const Text(
+          'Bạn có thể bật bảng công thức/reference ở phiên bản tiếp theo. Hiện tại câu hỏi vẫn hiển thị đầy đủ nội dung cần thiết.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQuestionBoardHint() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Question Board nằm ở thanh số câu phía dưới màn hình.'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final question = _currentQuestion;
     final answered = _answerState.answeredCount(_questions);
+    final screenSize = MediaQuery.sizeOf(context);
+    final compactTopBar = screenSize.height < 440 || screenSize.width < 760;
+    final user = AuthRepository.instance.currentUser;
+    final candidateName = (user?.name.trim().isNotEmpty ?? false)
+        ? user!.name.trim()
+        : 'Thí sinh';
+    final candidateCode = (user?.id ?? 0) > 0 ? '${user!.id}' : '-';
+    final timerDanger = _remainingSeconds > 0 && _remainingSeconds <= 5 * 60;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
             DefaultRoomHeader(
-              title: widget.room.quiz.name,
+              candidateName: candidateName,
+              candidateCode: candidateCode,
+              quizName: widget.room.quiz.name,
+              examDate: DateFormat('dd/MM/yyyy').format(DateTime.now()),
               timerText: formatDuration(_remainingSeconds),
-              answeredText: '$answered/${_questions.length}',
+              timerDanger: timerDanger,
+              showTimer: _showTimer,
+              isSubmitting: _isSubmitting,
+              onSubmit: _confirmSubmit,
+              compact: compactTopBar,
+            ),
+            DefaultRoomActionBar(
+              answeredCount: answered,
+              totalQuestions: _questions.length,
+              onPrevious: _goPrevious,
+              onNext: _goNext,
+              canPrevious: _currentIndex > 0,
+              canNext: _currentIndex < _questions.length - 1,
+              isSubmitting: _isSubmitting,
+              onDirections: _showDirections,
+              onCalculator: _showCalculator,
+              onReference: _showReference,
+              onQuestionBoard: _showQuestionBoardHint,
+              onBookmark: _toggleCurrentBookmark,
+              onToggleTimer: _toggleTimerVisibility,
+              isCurrentBookmarked:
+                  question != null && _answerState.isMarked(question.id),
+              isTimerVisible: _showTimer,
+              compact: compactTopBar,
             ),
             if (question == null)
               const Expanded(
@@ -183,51 +312,36 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
               )
             else
               Expanded(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                        child: DefaultRoomQuestionCard(
-                          question: question,
-                          questionNumber: _currentIndex + 1,
-                          totalQuestions: _questions.length,
-                          answerState: _answerState,
-                          onChanged: () => setState(() {}),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          top: BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                      ),
-                      child: DefaultRoomNavigate(
-                        questions: _questions,
-                        currentIndex: _currentIndex,
-                        answerState: _answerState,
-                        onTap: (index) {
-                          setState(() {
-                            _currentIndex = index;
-                          });
-                        },
-                      ),
-                    ),
-                    DefaultRoomFooter(
-                      onPrevious: _goPrevious,
-                      onNext: _goNext,
-                      onSubmit: _confirmSubmit,
-                      canPrevious: _currentIndex > 0,
-                      isLastQuestion: _currentIndex >= _questions.length - 1,
-                      isSubmitting: _isSubmitting,
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  child: DefaultRoomQuestionCard(
+                    question: question,
+                    questionNumber: _currentIndex + 1,
+                    totalQuestions: _questions.length,
+                    answerState: _answerState,
+                    onChanged: () => setState(() {}),
+                  ),
                 ),
               ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF9FAFB),
+                border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+              ),
+              child: DefaultRoomNavigate(
+                questions: _questions,
+                currentIndex: _currentIndex,
+                answerState: _answerState,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                  _scrollToTop();
+                },
+              ),
+            ),
           ],
         ),
       ),

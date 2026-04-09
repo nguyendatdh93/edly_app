@@ -321,27 +321,7 @@ class _CourseDetailScaffold extends StatelessWidget {
                           title: 'Giới thiệu về khóa học',
                           child: _ExpandableOverview(text: data.overview),
                         ),
-                        if (data.features.isNotEmpty) ...[
-                          const SizedBox(height: 18),
-                          _SectionCard(
-                            title: 'Những gì bạn sẽ nhận được',
-                            child: Column(
-                              children: List.generate(
-                                data.features.length,
-                                (index) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: index == data.features.length - 1
-                                        ? 0
-                                        : 10,
-                                  ),
-                                  child: _FeatureRow(
-                                    item: data.features[index],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                    
                         const SizedBox(height: 18),
                         _SectionCard(
                           title: 'Nội dung khóa học',
@@ -899,9 +879,7 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: CourseDetailPalette.surface,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: CourseDetailPalette.border),
+        color: CourseDetailPalette.surface, 
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

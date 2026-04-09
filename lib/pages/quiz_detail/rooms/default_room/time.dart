@@ -20,21 +20,19 @@ class DefaultRoomTime extends StatelessWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: highlight ? const Color(0xFFFEF3C7) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: highlight ? const Color(0xFFDC2626) : const Color(0xFF083A8A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white24),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.timer_outlined, size: 14, color: Color(0xFF334155)),
+          const Icon(Icons.timer_outlined, size: 14, color: Colors.white),
           const SizedBox(width: 4),
           Text(
             value,
             style: TextStyle(
-              color: highlight
-                  ? const Color(0xFF92400E)
-                  : const Color(0xFF1E293B),
+              color: Colors.white,
               fontWeight: FontWeight.w700,
               fontSize: compact ? 11 : 12,
             ),

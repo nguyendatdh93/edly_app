@@ -483,6 +483,7 @@ class QuizQuestion {
     required this.maths,
     required this.images,
     required this.options,
+    required this.children,
   });
 
   final String id;
@@ -500,12 +501,14 @@ class QuizQuestion {
   final List<QuizMathAsset> maths;
   final List<QuizImageAsset> images;
   final List<QuizOption> options;
+  final List<QuizQuestion> children;
 
   bool get isEssayLike => options.isEmpty;
   String get effectiveModuleName => moduleName.isNotEmpty ? moduleName : module;
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
     final optionsRaw = json['options'];
+    final childrenRaw = json['children'];
 
     return QuizQuestion(
       id: _asStr(json['id']),
@@ -528,6 +531,15 @@ class QuizQuestion {
                 .map(
                   (item) =>
                       QuizOption.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : const [],
+      children: childrenRaw is List
+          ? childrenRaw
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      QuizQuestion.fromJson(Map<String, dynamic>.from(item)),
                 )
                 .toList()
           : const [],

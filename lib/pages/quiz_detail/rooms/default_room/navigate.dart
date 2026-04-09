@@ -20,47 +20,93 @@ class DefaultRoomNavigate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: List<Widget>.generate(questions.length, (index) {
-        final isCurrent = index == currentIndex;
-        final isAnswered = answerState.isQuestionAnswered(questions[index]);
-        final isMarked =
-            showMarked && answerState.isMarked(questions[index].id);
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: questions.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final isCurrent = index == currentIndex;
+          final isAnswered = answerState.isQuestionAnswered(questions[index]);
+          final isMarked =
+              showMarked && answerState.isMarked(questions[index].id);
 
-        final color = isCurrent
-            ? const Color(0xFF1D4ED8)
-            : isMarked
-            ? const Color(0xFFF97316)
-            : isAnswered
-            ? const Color(0xFF0EA5E9)
-            : const Color(0xFFE2E8F0);
+          final style = _resolveStyle(
+            isCurrent: isCurrent,
+            isAnswered: isAnswered,
+            isMarked: isMarked,
+          );
 
-        return InkWell(
-          onTap: () => onTap(index),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                color: isCurrent || isMarked || isAnswered
-                    ? Colors.white
-                    : const Color(0xFF334155),
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+          return InkWell(
+            onTap: () => onTap(index),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: style.background,
+                borderRadius: BorderRadius.circular(17),
+                border: Border.all(color: style.border),
+              ),
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(
+                  color: style.foreground,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
+
+  _DefaultNavStyle _resolveStyle({
+    required bool isCurrent,
+    required bool isAnswered,
+    required bool isMarked,
+  }) {
+    if (isMarked) {
+      return const _DefaultNavStyle(
+        background: Color(0xFFFED7AA),
+        foreground: Color(0xFFEA580C),
+        border: Color(0xFFF97316),
+      );
+    }
+    if (isAnswered) {
+      return const _DefaultNavStyle(
+        background: Color(0xFFBFDBFE),
+        foreground: Color(0xFF2563EB),
+        border: Color(0xFF3B82F6),
+      );
+    }
+    if (isCurrent) {
+      return const _DefaultNavStyle(
+        background: Color(0xFF9CA3AF),
+        foreground: Colors.white,
+        border: Color(0xFFD1D5DB),
+      );
+    }
+    return const _DefaultNavStyle(
+      background: Color(0xFFE5E7EB),
+      foreground: Color(0xFF374151),
+      border: Color(0xFFE5E7EB),
+    );
+  }
+}
+
+class _DefaultNavStyle {
+  const _DefaultNavStyle({
+    required this.background,
+    required this.foreground,
+    required this.border,
+  });
+
+  final Color background;
+  final Color foreground;
+  final Color border;
 }

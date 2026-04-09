@@ -14,16 +14,7 @@ class QuizRoomAnswerState {
   void ensureDefaultsForQuestion(QuizQuestion question) {
     final type = question.type.toLowerCase().trim();
     if (type == 'yes-no') {
-      yesNoAnswers.putIfAbsent(question.id, () {
-        final value = <String, bool>{};
-        for (final option in question.options) {
-          if (option.id.isEmpty) {
-            continue;
-          }
-          value[option.id] = false;
-        }
-        return value;
-      });
+      yesNoAnswers.putIfAbsent(question.id, () => <String, bool>{});
     }
 
     if (type == 'multiple-choices') {
@@ -37,6 +28,15 @@ class QuizRoomAnswerState {
 
   bool isQuestionAnswered(QuizQuestion question) {
     final type = question.type.toLowerCase().trim();
+    if (type == 'comprehension' && question.children.isNotEmpty) {
+      for (final child in question.children) {
+        if (isQuestionAnswered(child)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     if (type == 'single-choice') {
       return (selectedOptions[question.id] ?? '').trim().isNotEmpty;
     }
@@ -48,7 +48,7 @@ class QuizRoomAnswerState {
 
     if (type == 'yes-no') {
       final values = yesNoAnswers[question.id] ?? const <String, bool>{};
-      return values.values.any((item) => item == true);
+      return values.isNotEmpty;
     }
 
     if (type == 'drag-drop') {
