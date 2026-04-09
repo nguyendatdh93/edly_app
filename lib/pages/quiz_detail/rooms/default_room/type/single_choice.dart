@@ -64,6 +64,7 @@ class _SingleChoiceOption extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 28,
@@ -80,20 +81,25 @@ class _SingleChoiceOption extends StatelessWidget {
               ),
               child: Text(
                 prefix,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
+                  height: 1,
                   color: selected ? Colors.white : const Color(0xFF4B5563),
                 ),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 8),
             Expanded(
-              child: DefaultRoomHtmlView(
-                html: content,
-                fontSize: 10,
-                minHeight: 26,
-                maxAutoHeight: 320,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: DefaultRoomHtmlView(
+                  html: content,
+                  fontSize: 10,
+                  minHeight: 28,
+                  maxAutoHeight: 320,
+                ),
               ),
             ),
           ],

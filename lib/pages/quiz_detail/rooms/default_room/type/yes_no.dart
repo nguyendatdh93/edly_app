@@ -20,7 +20,7 @@ class YesNo extends StatelessWidget {
       children: [
         for (var index = 0; index < question.options.length; index++)
           Container(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: 2),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -35,13 +35,13 @@ class YesNo extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: DefaultRoomHtmlView(
                       html: _optionHtml(index, question.options[index]),
-                      fontSize: 16,
+                      fontSize: 10,
                       minHeight: 26,
                       maxAutoHeight: 320,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 5),
                 _YesNoButton(
                   label: 'Đ',
                   selected: values[question.options[index].id] == true,
@@ -50,7 +50,7 @@ class YesNo extends StatelessWidget {
                     onToggle(question.options[index].id, true);
                   },
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 5),
                 _YesNoButton(
                   label: 'S',
                   selected:
