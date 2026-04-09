@@ -6,6 +6,7 @@ import 'package:edupen/pages/course_detail/course_detail_repository.dart';
 import 'package:edupen/pages/home/home_models.dart';
 import 'package:edupen/pages/quiz_detail/quiz_detail_view.dart';
 import 'package:edupen/services/auth_repository.dart';
+import 'package:edupen/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -16,6 +17,7 @@ class CourseDetailView extends StatefulWidget {
     required this.gradient,
     required this.accentColor,
     required this.sourceLabel,
+    this.currentDockTab,
     this.relatedCourses = const [],
   });
 
@@ -23,6 +25,7 @@ class CourseDetailView extends StatefulWidget {
   final List<Color> gradient;
   final Color accentColor;
   final String sourceLabel;
+  final LearningDockTab? currentDockTab;
   final List<HomeCourseItem> relatedCourses;
 
   @override
@@ -77,6 +80,7 @@ class _CourseDetailViewState extends State<CourseDetailView> {
         return _CourseDetailScaffold(
           data: data,
           accentColor: widget.accentColor,
+          currentTab: _resolveDockTab(),
           isLoading: isLoading,
           isPurchasing: _isPurchasingByBalance,
           errorMessage: errorMessage,
@@ -94,6 +98,21 @@ class _CourseDetailViewState extends State<CourseDetailView> {
     }
 
     return CourseDetailCopy.genericErrorMessage;
+  }
+
+  LearningDockTab _resolveDockTab() {
+    if (widget.currentDockTab != null) {
+      return widget.currentDockTab!;
+    }
+
+    final signature = widget.sourceLabel.trim().toLowerCase();
+    if (signature.contains('đã mua') ||
+        signature.contains('da mua') ||
+        signature.contains('purchased')) {
+      return LearningDockTab.purchasedCourses;
+    }
+
+    return LearningDockTab.home;
   }
 
   Future<void> _purchaseByBalance(CourseDetailData data) async {
@@ -168,7 +187,8 @@ class _CourseDetailViewState extends State<CourseDetailView> {
     if (item.isQuiz) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => QuizDetailView(quizId: item.id),
+          builder: (_) =>
+              QuizDetailView(quizId: item.id, currentTab: _resolveDockTab()),
         ),
       );
       if (mounted) {
@@ -212,6 +232,7 @@ class _CourseDetailViewState extends State<CourseDetailView> {
           courseSlug: data.courseSlug,
           courseTitle: data.hero.title,
           sections: data.sections,
+          currentDockTab: _resolveDockTab(),
         ),
       ),
     );
@@ -225,6 +246,7 @@ class _CourseDetailScaffold extends StatelessWidget {
   const _CourseDetailScaffold({
     required this.data,
     required this.accentColor,
+    required this.currentTab,
     required this.isLoading,
     required this.isPurchasing,
     required this.errorMessage,
@@ -235,6 +257,7 @@ class _CourseDetailScaffold extends StatelessWidget {
 
   final CourseDetailData data;
   final Color accentColor;
+  final LearningDockTab currentTab;
   final bool isLoading;
   final bool isPurchasing;
   final String? errorMessage;
@@ -246,6 +269,7 @@ class _CourseDetailScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CourseDetailPalette.background,
+      bottomNavigationBar: LearningDockBar(currentTab: currentTab),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -321,7 +345,7 @@ class _CourseDetailScaffold extends StatelessWidget {
                           title: 'Giới thiệu về khóa học',
                           child: _ExpandableOverview(text: data.overview),
                         ),
-                    
+
                         const SizedBox(height: 18),
                         _SectionCard(
                           title: 'Nội dung khóa học',
@@ -878,9 +902,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: CourseDetailPalette.surface, 
-      ),
+      decoration: BoxDecoration(color: CourseDetailPalette.surface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

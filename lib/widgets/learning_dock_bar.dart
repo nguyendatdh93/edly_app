@@ -15,9 +15,7 @@ class LearningDockBar extends StatelessWidget {
     BuildContext context,
     LearningDockTab destinationTab,
   ) async {
-    if (destinationTab == currentTab) {
-      return;
-    }
+    if (destinationTab == currentTab) return;
 
     final Widget destination;
     switch (destinationTab) {
@@ -43,71 +41,80 @@ class LearningDockBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
         child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x1A1F2A44),
-                blurRadius: 24,
-                offset: Offset(0, 12),
+                color: Colors.transparent,
+                blurRadius: 18,
+                offset: Offset(0, 6),
               ),
             ],
+            border: Border.all(color: const Color(0xFFF1F5F9)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Row(
-                  children: List.generate(_dockTabs.length, (index) {
-                    final tab = _dockTabs[index];
-                    final isSelected = currentTab == tab.tab;
+          child: Row(
+            children: List.generate(_dockTabs.length, (index) {
+              final tab = _dockTabs[index];
+              final isSelected = currentTab == tab.tab;
 
-                    return Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _onTabSelected(context, tab.tab),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isSelected ? tab.activeIcon : tab.icon,
-                                  size: 20,
+              return Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _onTabSelected(context, tab.tab),
+                    borderRadius: BorderRadius.circular(16),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFEFF6FF)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSelected ? tab.activeIcon : tab.icon,
+                            size: 19,
+                            color: isSelected
+                                ? HomePalette.primary
+                                : HomePalette.textMuted,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            tab.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  fontSize: 11,
+                                  height: 1.1,
                                   color: isSelected
                                       ? HomePalette.primary
                                       : HomePalette.textMuted,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  tab.label,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: isSelected
-                                            ? HomePalette.primary
-                                            : HomePalette.textMuted,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                      ),
-                                ),
-                              ],
-                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              );
+            }),
           ),
         ),
       ),
@@ -138,7 +145,7 @@ const List<_DockTabItem> _dockTabs = [
   ),
   _DockTabItem(
     tab: LearningDockTab.purchasedCourses,
-    label: 'Khóa học đã mua',
+    label: 'Khóa học',
     icon: Icons.menu_book_outlined,
     activeIcon: Icons.menu_book_rounded,
   ),

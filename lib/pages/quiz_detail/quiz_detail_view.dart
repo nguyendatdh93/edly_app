@@ -10,13 +10,19 @@ import 'package:edupen/pages/quiz_detail/quiz_detail_repository.dart';
 import 'package:edupen/pages/quiz_detail/quiz_result_view.dart';
 import 'package:edupen/pages/quiz_detail/rooms/quiz_room_router.dart';
 import 'package:edupen/services/auth_repository.dart';
+import 'package:edupen/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class QuizDetailView extends StatefulWidget {
-  const QuizDetailView({super.key, required this.quizId});
+  const QuizDetailView({
+    super.key,
+    required this.quizId,
+    this.currentTab = LearningDockTab.home,
+  });
 
   final String quizId;
+  final LearningDockTab currentTab;
 
   @override
   State<QuizDetailView> createState() => _QuizDetailViewState();
@@ -347,6 +353,7 @@ class _QuizDetailViewState extends State<QuizDetailView> {
           ],
           accentColor: QuizDetailPalette.primary,
           sourceLabel: 'quiz_detail',
+          currentDockTab: widget.currentTab,
         ),
       ),
     );
@@ -371,7 +378,8 @@ class _QuizDetailViewState extends State<QuizDetailView> {
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => QuizDetailView(quizId: targetQuizId),
+        builder: (_) =>
+            QuizDetailView(quizId: targetQuizId, currentTab: widget.currentTab),
       ),
     );
 
@@ -471,6 +479,7 @@ class _QuizDetailViewState extends State<QuizDetailView> {
 
         return Scaffold(
           backgroundColor: QuizDetailPalette.background,
+          bottomNavigationBar: LearningDockBar(currentTab: widget.currentTab),
           appBar: AppBar(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
