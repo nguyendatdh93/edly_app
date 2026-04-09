@@ -2,13 +2,11 @@ import 'package:edupen/core/network/app_exception.dart';
 import 'package:edupen/models/account_profile.dart';
 import 'package:edupen/pages/home/home_view.dart';
 import 'package:edupen/services/auth_repository.dart';
+import 'package:edupen/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 
 class AccountProfileView extends StatefulWidget {
-  const AccountProfileView({
-    super.key,
-    this.isOnboarding = false,
-  });
+  const AccountProfileView({super.key, this.isOnboarding = false});
 
   final bool isOnboarding;
 
@@ -126,10 +124,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     }
   }
 
-  void _applyProfile(
-    AccountProfile profile,
-    AccountProfileFormSchema form,
-  ) {
+  void _applyProfile(AccountProfile profile, AccountProfileFormSchema form) {
     _nameController.text = profile.name;
     _emailController.text = profile.email ?? '';
     _selectedBirthday = _sanitizeSelectValue(
@@ -154,10 +149,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     );
   }
 
-  Future<void> _reloadLocationOptions({
-    int? provinceId,
-    int? districtId,
-  }) {
+  Future<void> _reloadLocationOptions({int? provinceId, int? districtId}) {
     return _loadProfile(
       provinceId: provinceId,
       districtId: districtId,
@@ -202,17 +194,15 @@ class _AccountProfileViewState extends State<AccountProfileView> {
 
       if (widget.isOnboarding) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute<void>(
-            builder: (_) => const HomeView(),
-          ),
+          MaterialPageRoute<void>(builder: (_) => const HomeView()),
           (route) => false,
         );
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } on ApiValidationException catch (error) {
       if (!mounted) {
         return;
@@ -324,15 +314,18 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       canPop: !widget.isOnboarding,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FB),
+        bottomNavigationBar: widget.isOnboarding
+            ? null
+            : const LearningDockBar(currentTab: LearningDockTab.account),
         body: SafeArea(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _screenData == null
-                  ? _ProfileErrorState(
-                      message: _errorMessage ?? 'Không thể tải dữ liệu hồ sơ.',
-                      onRetry: _loadProfile,
-                    )
-                  : _buildLoadedState(context, _screenData!),
+              ? _ProfileErrorState(
+                  message: _errorMessage ?? 'Không thể tải dữ liệu hồ sơ.',
+                  onRetry: _loadProfile,
+                )
+              : _buildLoadedState(context, _screenData!),
         ),
       ),
     );
@@ -345,6 +338,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     final profile = data.profile;
     final form = data.form;
     final theme = Theme.of(context);
+    final canNavigateBack =
+        !widget.isOnboarding && Navigator.of(context).canPop();
 
     return Column(
       children: [
@@ -367,7 +362,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
             children: [
               Row(
                 children: [
-                  if (!widget.isOnboarding)
+                  if (canNavigateBack)
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: IconButton.styleFrom(
@@ -376,7 +371,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                       ),
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),
-                  if (!widget.isOnboarding) const SizedBox(width: 10),
+                  if (canNavigateBack) const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Cập nhật thông tin tài khoản',
@@ -391,7 +386,10 @@ class _AccountProfileViewState extends State<AccountProfileView> {
               ),
               const SizedBox(height: 18),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(999),
@@ -469,7 +467,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                             errorText: _fieldErrors['email'],
                             onChanged: (_) => _clearFieldError('email'),
                             validator: (_) {
-                              if (!form.email.editable || !form.email.required) {
+                              if (!form.email.editable ||
+                                  !form.email.required) {
                                 return null;
                               }
 
@@ -514,7 +513,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                     _clearFieldError('user_type');
                                   },
                             validator: (value) {
-                              if (!form.userType.required || !form.userType.enabled) {
+                              if (!form.userType.required ||
+                                  !form.userType.enabled) {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
@@ -549,7 +549,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                     _clearFieldError('birthday');
                                   },
                             validator: (value) {
-                              if (!form.birthday.required || !form.birthday.enabled) {
+                              if (!form.birthday.required ||
+                                  !form.birthday.enabled) {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
@@ -603,7 +604,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       );
                                     },
                               validator: (value) {
-                                if (!form.province.required || !form.province.enabled) {
+                                if (!form.province.required ||
+                                    !form.province.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -644,7 +646,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       );
                                     },
                               validator: (value) {
-                                if (!form.district.required || !form.district.enabled) {
+                                if (!form.district.required ||
+                                    !form.district.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -679,7 +682,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       _clearFieldError('school_id');
                                     },
                               validator: (value) {
-                                if (!form.school.required || !form.school.enabled) {
+                                if (!form.school.required ||
+                                    !form.school.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -800,7 +804,8 @@ class _ProfileSummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (profile.roleName != null && profile.roleName!.isNotEmpty) ...[
+                if (profile.roleName != null &&
+                    profile.roleName!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     profile.roleName!,
@@ -892,9 +897,9 @@ class _FieldLabel extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w800,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w800,
+      ),
     );
   }
 }
@@ -932,9 +937,9 @@ class _ProfileTextField extends StatelessWidget {
       onChanged: onChanged,
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w600,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
@@ -953,10 +958,7 @@ class _ProfileTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: Color(0xFF0F67F4),
-            width: 1.2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF0F67F4), width: 1.2),
         ),
         errorMaxLines: 2,
       ),
@@ -994,10 +996,7 @@ class _ProfileSelectField<T> extends StatelessWidget {
         fillColor: onChanged == null
             ? const Color(0xFFF1F4F8)
             : const Color(0xFFF7F9FD),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFD9E2F0)),
@@ -1008,10 +1007,7 @@ class _ProfileSelectField<T> extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: Color(0xFF0F67F4),
-            width: 1.2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF0F67F4), width: 1.2),
         ),
         errorText: errorText,
         errorMaxLines: 2,
@@ -1021,9 +1017,9 @@ class _ProfileSelectField<T> extends StatelessWidget {
       isExpanded: true,
       borderRadius: BorderRadius.circular(18),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w600,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
@@ -1046,19 +1042,16 @@ class _InlineErrorNotice extends StatelessWidget {
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFC7254E),
-              fontWeight: FontWeight.w700,
-            ),
+          color: const Color(0xFFC7254E),
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 }
 
 class _ProfileErrorState extends StatelessWidget {
-  const _ProfileErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ProfileErrorState({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;
@@ -1081,15 +1074,12 @@ class _ProfileErrorState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: const Color(0xFF526176),
-                    height: 1.4,
-                  ),
+                color: const Color(0xFF526176),
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 18),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Thử lại'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:edupen/pages/home/home_models.dart';
 import 'package:edupen/pages/home/home_repository.dart';
 import 'package:edupen/pages/sign_in/sign_in_view.dart';
 import 'package:edupen/services/auth_repository.dart';
+import 'package:edupen/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -23,7 +24,6 @@ class _HomeViewState extends State<HomeView> {
   final PageController _pageController = PageController(viewportFraction: 0.92);
   Timer? _slideTimer;
   int _currentSlide = 0;
-  int _selectedBottomTab = 0;
   late Future<HomeDashboardData> _dashboardFuture;
   late Future<List<HomeCollectionMenuItem>> _drawerMenuFuture;
 
@@ -131,30 +131,6 @@ class _HomeViewState extends State<HomeView> {
     await _reloadDashboard();
   }
 
-  Future<void> _onBottomTabSelected(int index) async {
-    if (_selectedBottomTab == index) {
-      return;
-    }
-
-    setState(() {
-      _selectedBottomTab = index;
-    });
-
-    if (index == 4) {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const AccountProfileView()),
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _selectedBottomTab = 0;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,9 +139,8 @@ class _HomeViewState extends State<HomeView> {
         menuFuture: _drawerMenuFuture,
         onReloadMenu: _reloadDrawerMenu,
       ),
-      bottomNavigationBar: _HomeLearningDock(
-        selectedIndex: _selectedBottomTab,
-        onTabSelected: _onBottomTabSelected,
+      bottomNavigationBar: const LearningDockBar(
+        currentTab: LearningDockTab.home,
       ),
       body: Builder(
         builder: (context) {
@@ -215,34 +190,34 @@ class _HomeViewState extends State<HomeView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SearchBox(),
+                        // const _SearchBox(),
                         const SizedBox(height: 18),
-                        SizedBox(
-                          height: 256,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: HomeContent.slides.length,
-                            onPageChanged: (index) {
-                              setState(() {
-                                _currentSlide = index;
-                              });
-                            },
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  right: index == HomeContent.slides.length - 1
-                                      ? 0
-                                      : 12,
-                                ),
-                                child: _HeroSlideCard(
-                                  data: HomeContent.slides[index],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _SlideIndicator(currentSlide: _currentSlide),
+                        // SizedBox(
+                        //   height: 256,
+                        //   child: PageView.builder(
+                        //     controller: _pageController,
+                        //     itemCount: HomeContent.slides.length,
+                        //     onPageChanged: (index) {
+                        //       setState(() {
+                        //         _currentSlide = index;
+                        //       });
+                        //     },
+                        //     itemBuilder: (context, index) {
+                        //       return Padding(
+                        //         padding: EdgeInsets.only(
+                        //           right: index == HomeContent.slides.length - 1
+                        //               ? 0
+                        //               : 12,
+                        //         ),
+                        //         child: _HeroSlideCard(
+                        //           data: HomeContent.slides[index],
+                        //         ),
+                        //       );
+                        //     },
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 12),
+                        // _SlideIndicator(currentSlide: _currentSlide),
                         const SizedBox(height: 24),
                         FutureBuilder<HomeDashboardData>(
                           future: _dashboardFuture,
@@ -1026,92 +1001,6 @@ class _SearchBox extends StatelessWidget {
   }
 }
 
-class _HomeLearningDock extends StatelessWidget {
-  const _HomeLearningDock({
-    required this.selectedIndex,
-    required this.onTabSelected,
-  });
-
-  final int selectedIndex;
-  final Future<void> Function(int index) onTabSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A1F2A44),
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Row(
-                  children: List.generate(_dockTabs.length, (index) {
-                    final tab = _dockTabs[index];
-                    final isSelected = selectedIndex == index;
-
-                    return Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () async => onTabSelected(index),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isSelected ? tab.activeIcon : tab.icon,
-                                  size: 20,
-                                  color: isSelected
-                                      ? HomePalette.primary
-                                      : HomePalette.textMuted,
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  tab.label,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: isSelected
-                                            ? HomePalette.primary
-                                            : HomePalette.textMuted,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _HeroSlideCard extends StatelessWidget {
   const _HeroSlideCard({required this.data});
 
@@ -1748,36 +1637,6 @@ class _HomeEmptyState extends StatelessWidget {
     );
   }
 }
-
-class _DockTabItem {
-  const _DockTabItem({
-    required this.label,
-    required this.icon,
-    required this.activeIcon,
-  });
-
-  final String label;
-  final IconData icon;
-  final IconData activeIcon;
-}
-
-const List<_DockTabItem> _dockTabs = [
-  _DockTabItem(
-    label: 'Trang chủ',
-    icon: Icons.home_outlined,
-    activeIcon: Icons.home_rounded,
-  ),
-  _DockTabItem(
-    label: 'Khóa học',
-    icon: Icons.menu_book_outlined,
-    activeIcon: Icons.menu_book_rounded,
-  ),
-  _DockTabItem(
-    label: 'Hồ sơ',
-    icon: Icons.person_outline_rounded,
-    activeIcon: Icons.person_rounded,
-  ),
-];
 
 class _CardVisual {
   const _CardVisual({required this.gradient, required this.accentColor});
