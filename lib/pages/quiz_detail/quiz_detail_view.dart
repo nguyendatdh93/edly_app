@@ -991,13 +991,13 @@ class _CourseContextCard extends StatelessWidget {
                       color: QuizDetailPalette.primary,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      'Phần: $currentSectionTitle',
-                      style: const TextStyle(
-                        color: QuizDetailPalette.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    // Text(
+                    //   'Phần: $currentSectionTitle',
+                    //   style: const TextStyle(
+                    //     color: QuizDetailPalette.textSecondary,
+                    //     fontWeight: FontWeight.w600,
+                    //   ),
+                    // ),
                   ],
                 ),
               if (totalQuizCount > 0)

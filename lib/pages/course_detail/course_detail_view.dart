@@ -1045,10 +1045,10 @@ class _SectionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: _SectionTitle(title: title)),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                Flexible(child: trailing!),
-              ],
+              // if (trailing != null) ...[
+              //   const SizedBox(width: 12),
+              //   Flexible(child: trailing!),
+              // ],
             ],
           ),
           const SizedBox(height: 14),

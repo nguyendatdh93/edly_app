@@ -145,7 +145,7 @@ const List<_DockTabItem> _dockTabs = [
   ),
   _DockTabItem(
     tab: LearningDockTab.purchasedCourses,
-    label: 'Khóa học',
+    label: 'Đã mua',
     icon: Icons.menu_book_outlined,
     activeIcon: Icons.menu_book_rounded,
   ),

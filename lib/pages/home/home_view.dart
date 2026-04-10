@@ -1356,40 +1356,40 @@ class _ShowcaseCourseCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 data.shortDescription,
-                maxLines: 2,
+                maxLines: 5,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: HomePalette.textSecondary,
                   height: 1.4,
                 ),
               ),
-              const Spacer(),
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: visual.accentColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Icon(
-                      Icons.workspace_premium_rounded,
-                      color: visual.accentColor,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      badge,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: HomePalette.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // const Spacer(),
+              // Row(
+              //   children: [
+              //     Container(
+              //       width: 36,
+              //       height: 36,
+              //       decoration: BoxDecoration(
+              //         color: visual.accentColor.withValues(alpha: 0.12),
+              //         borderRadius: BorderRadius.circular(999),
+              //       ),
+              //       child: Icon(
+              //         Icons.workspace_premium_rounded,
+              //         color: visual.accentColor,
+              //       ),
+              //     ),
+              //     const SizedBox(width: 10),
+              //     // Expanded(
+              //     //   child: Text(
+              //     //     badge,
+              //     //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              //     //       color: HomePalette.textPrimary,
+              //     //       fontWeight: FontWeight.w700,
+              //     //     ),
+              //     //   ),
+              //     // ),
+              //   ],
+              // ),
             ],
           ),
         ),
@@ -1515,14 +1515,14 @@ class _CourseThumbnail extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(
-                  badge,
-                  style: TextStyle(
-                    color: badgeColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                // child: Text(
+                //   badge,
+                //   style: TextStyle(
+                //     color: badgeColor,
+                //     fontSize: 12,
+                //     fontWeight: FontWeight.w700,
+                //   ),
+                // ),
               ),
             ),
             if (footerLabel != null)
