@@ -149,19 +149,9 @@ class _QuizCongratulationsViewState extends State<QuizCongratulationsView> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  Container(height: 1, color: const Color(0xFFE5E7EB)),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'Kết quả của bạn đã được ghi nhận. Hãy tiếp tục giữ vững phong độ và chinh phục những thử thách tiếp theo 🚀',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 18,
-                      height: 1.55,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 22), 
+               
+                
                   FilledButton(
                     onPressed: _isOpeningResult ? null : _openResult,
                     style: FilledButton.styleFrom(
@@ -181,7 +171,7 @@ class _QuizCongratulationsViewState extends State<QuizCongratulationsView> {
                     ),
                     child: _isOpeningResult
                         ? const SizedBox(
-                            width: 22,
+                            width: 10,
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
