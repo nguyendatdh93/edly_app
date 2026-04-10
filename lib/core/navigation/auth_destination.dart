@@ -4,9 +4,9 @@ import 'package:edupen/services/auth_repository.dart';
 import 'package:flutter/widgets.dart';
 
 Widget buildSignedInDestination() {
-  if (AuthRepository.instance.needsFirstTimeOnboarding) {
-    return const AccountOnboardingView();
-  }
+  // if (AuthRepository.instance.needsFirstTimeOnboarding) {
+  //   return const AccountOnboardingView();
+  // }
 
   return const HomeView();
 }
