@@ -99,6 +99,31 @@ class AuthUser {
     return 'Tài khoản Edly';
   }
 
+  String get normalizedRole => (role ?? '').trim().toLowerCase();
+
+  String get normalizedRoleName => (roleName ?? '').trim().toLowerCase();
+
+  bool get isAdmin {
+    return normalizedRole == 'admin' || normalizedRoleName == 'admin';
+  }
+
+  bool get isStaff {
+    return normalizedRole == 'staff' ||
+        normalizedRole == 'data_entry' ||
+        normalizedRoleName == 'nhân viên';
+  }
+
+  bool get isAdminPortalUser => isAdmin || isStaff;
+
+  bool get isLearnerRole {
+    return normalizedRole == 'student' ||
+        normalizedRole == 'parent' ||
+        normalizedRole == 'teacher' ||
+        normalizedRoleName == 'học sinh' ||
+        normalizedRoleName == 'phụ huynh' ||
+        normalizedRoleName == 'giáo viên';
+  }
+
   static int _readInt(dynamic value) {
     if (value is int) {
       return value;

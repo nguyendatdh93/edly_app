@@ -25,6 +25,7 @@ dependencies:
   webview_flutter: ^4.13.0
   pdfx: ^2.9.2
   docx_viewer: ^1.0.1
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:

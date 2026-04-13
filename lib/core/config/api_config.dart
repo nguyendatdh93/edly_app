@@ -22,6 +22,11 @@ class ApiConfig {
   static String get deviceName =>
       'edly-mobile-app-${FlavorConfig.instance.flavor.name}';
 
+  static String get googleServerClientId => const String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: '',
+  ).trim();
+
   static String get webBaseUrl {
     final apiUrl = Uri.parse(baseUrl);
     final pathSegments = List<String>.from(apiUrl.pathSegments);

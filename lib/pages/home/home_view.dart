@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:edly/pages/course_detail/course_detail_view.dart';
 import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/pages/admin/admin_dashboard_view.dart';
 import 'package:edly/pages/account_profile/account_profile_view.dart';
 import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/home/home_models.dart';
@@ -399,6 +400,14 @@ class _HomeDrawer extends StatelessWidget {
     );
   }
 
+  Future<void> _openAdminDashboard(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    await navigator.push(
+      MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
+    );
+  }
+
   Future<void> _openDrawerDestination(
     BuildContext context,
     HomeDrawerItemData item,
@@ -437,6 +446,8 @@ class _HomeDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canAccessAdminPortal = AuthRepository.instance.isAdminPortalUser;
+
     return Drawer(
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
@@ -497,6 +508,41 @@ class _HomeDrawer extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              if (canAccessAdminPortal) ...[
+                ListTile(
+                  onTap: () => _openAdminDashboard(context),
+                  leading: const Icon(
+                    Icons.admin_panel_settings_outlined,
+                    color: HomePalette.primary,
+                  ),
+                  title: Text(
+                    'Trang quản trị',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: HomePalette.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Mở dashboard quản trị trên mobile',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: HomePalette.textSecondary,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: HomePalette.textMuted,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  tileColor: HomePalette.chipGreen,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 2,
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
               Expanded(
                 child: ListView.separated(
                   padding: EdgeInsets.zero,

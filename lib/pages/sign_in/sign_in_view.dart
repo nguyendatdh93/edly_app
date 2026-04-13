@@ -3,6 +3,7 @@ import 'package:edly/core/navigation/auth_destination.dart';
 import 'package:edly/pages/sign_in/sign_in_constants.dart';
 import 'package:edly/pages/sign_up/sign_up_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/services/google_auth_service.dart';
 import 'package:flutter/material.dart';
 
 /// Màn hình đăng nhập hiển thị theo layout mobile và gọi API thật.
@@ -19,6 +20,7 @@ class _SignInViewState extends State<SignInView> {
   final _passwordController = TextEditingController();
 
   bool _isSubmitting = false;
+  bool _isGoogleSubmitting = false;
   bool _rememberMe = true;
   String? _errorMessage;
 
@@ -52,9 +54,7 @@ class _SignInViewState extends State<SignInView> {
       }
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          builder: (_) => buildSignedInDestination(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => buildSignedInDestination()),
         (route) => false,
       );
     } on AppException catch (error) {
@@ -74,19 +74,57 @@ class _SignInViewState extends State<SignInView> {
   }
 
   void _goToSignUp(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const SignUpView(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const SignUpView()));
   }
 
-  void _showGoogleUnavailable() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đăng nhập Google chưa được triển khai trong app.'),
-      ),
-    );
+  Future<void> _submitGoogle() async {
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isGoogleSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final googlePayload = await GoogleAuthService.instance.signIn();
+      if (googlePayload == null) {
+        return;
+      }
+
+      await AuthRepository.instance.signInWithGoogle(
+        idToken: googlePayload.idToken,
+        accessToken: googlePayload.accessToken,
+        sub: googlePayload.sub,
+        name: googlePayload.name,
+        email: googlePayload.email,
+        picture: googlePayload.picture,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => buildSignedInDestination()),
+        (route) => false,
+      );
+    } on AppException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -129,7 +167,9 @@ class _SignInViewState extends State<SignInView> {
                     ),
                     const SizedBox(height: 30),
                     OutlinedButton(
-                      onPressed: _showGoogleUnavailable,
+                      onPressed: (_isGoogleSubmitting || _isSubmitting)
+                          ? null
+                          : _submitGoogle,
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 52),
                         side: const BorderSide(color: SignInPalette.border),
@@ -138,12 +178,23 @@ class _SignInViewState extends State<SignInView> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _GoogleGlyph(),
-                          SizedBox(width: 12),
-                          Text(
+                          if (_isGoogleSubmitting) ...[
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: SignInPalette.primary,
+                              ),
+                            ),
+                          ] else ...[
+                            const _GoogleGlyph(),
+                          ],
+                          const SizedBox(width: 12),
+                          const Text(
                             SignInContent.googleButton,
                             style: TextStyle(
                               color: SignInPalette.textPrimary,
@@ -200,9 +251,7 @@ class _SignInViewState extends State<SignInView> {
                                 _rememberMe = value ?? true;
                               });
                             },
-                            side: const BorderSide(
-                              color: SignInPalette.border,
-                            ),
+                            side: const BorderSide(color: SignInPalette.border),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -234,9 +283,7 @@ class _SignInViewState extends State<SignInView> {
                           ),
                           child: const Text(
                             SignInContent.forgotPassword,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -249,7 +296,9 @@ class _SignInViewState extends State<SignInView> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: _isSubmitting ? null : _submit,
+                        onPressed: (_isSubmitting || _isGoogleSubmitting)
+                            ? null
+                            : _submit,
                         style: FilledButton.styleFrom(
                           backgroundColor: SignInPalette.primary,
                           foregroundColor: Colors.white,
@@ -297,9 +346,7 @@ class _SignInViewState extends State<SignInView> {
                           ),
                           child: const Text(
                             SignInContent.footerAction,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -328,9 +375,9 @@ class _FieldLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: SignInPalette.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+          color: SignInPalette.textPrimary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -430,28 +477,20 @@ class _DividerLabel extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Divider(
-            color: SignInPalette.divider,
-            thickness: 1,
-            height: 1,
-          ),
+          child: Divider(color: SignInPalette.divider, thickness: 1, height: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             SignInContent.dividerText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: SignInPalette.textMuted,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: SignInPalette.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const Expanded(
-          child: Divider(
-            color: SignInPalette.divider,
-            thickness: 1,
-            height: 1,
-          ),
+          child: Divider(color: SignInPalette.divider, thickness: 1, height: 1),
         ),
       ],
     );
@@ -476,9 +515,9 @@ class _ErrorNotice extends StatelessWidget {
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFC7254E),
-              fontWeight: FontWeight.w600,
-            ),
+          color: const Color(0xFFC7254E),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

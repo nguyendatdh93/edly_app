@@ -27,6 +27,11 @@ class AuthRepository {
 
   static final AuthRepository instance = AuthRepository._internal();
   static const String _sessionKey = 'edly.auth.session';
+  static const List<String> _googleSignInPaths = <String>[
+    '/mobile/auth/google',
+    '/mobile/auth/login/google',
+    '/mobile/auth/google-login',
+  ];
 
   final Dio _dio;
   final FlutterSecureStorage _storage;
@@ -35,9 +40,16 @@ class AuthRepository {
   AuthUser? get currentUser => _session?.user;
   String? get currentToken => _session?.token;
   bool get isSignedIn => _session != null;
+  bool get isAdminPortalUser => currentUser?.isAdminPortalUser ?? false;
   bool get needsFirstTimeOnboarding {
-    final role = currentUser?.role?.trim().toLowerCase();
-    return role != 'student' && role != 'parent' && role != 'teacher';
+    final user = currentUser;
+    if (user == null) {
+      return false;
+    }
+    if (user.isAdminPortalUser) {
+      return false;
+    }
+    return !user.isLearnerRole;
   }
 
   Future<bool> restoreSession() async {
@@ -100,6 +112,66 @@ class AuthRepository {
         'password_confirmation': passwordConfirmation,
         'device_name': ApiConfig.deviceName,
       },
+    );
+  }
+
+  Future<AuthSession> signInWithGoogle({
+    required String idToken,
+    String? accessToken,
+    String? sub,
+    String? name,
+    String? email,
+    String? picture,
+  }) async {
+    final normalizedIdToken = idToken.trim();
+    if (normalizedIdToken.isEmpty) {
+      throw const AppException('Thiếu Google ID token để đăng nhập.');
+    }
+
+    final normalizedAccessToken = accessToken?.trim();
+    final normalizedSub = sub?.trim();
+    final normalizedName = name?.trim();
+    final normalizedEmail = email?.trim();
+    final normalizedPicture = picture?.trim();
+
+    final payload = <String, dynamic>{
+      'id_token': normalizedIdToken,
+      'device_name': ApiConfig.deviceName,
+      if (normalizedAccessToken != null && normalizedAccessToken.isNotEmpty)
+        'access_token': normalizedAccessToken,
+      if (normalizedSub != null && normalizedSub.isNotEmpty) ...{
+        'sub': normalizedSub,
+        'google_id': normalizedSub,
+      },
+      if (normalizedName != null && normalizedName.isNotEmpty)
+        'name': normalizedName,
+      if (normalizedEmail != null && normalizedEmail.isNotEmpty)
+        'email': normalizedEmail,
+      if (normalizedPicture != null && normalizedPicture.isNotEmpty) ...{
+        'picture': normalizedPicture,
+        'avatar': normalizedPicture,
+      },
+    };
+
+    for (final path in _googleSignInPaths) {
+      try {
+        final response = await _dio.post<dynamic>(path, data: payload);
+        final session = AuthSession.fromApiJson(_responseMap(response));
+        await _persistSession(session);
+        return session;
+      } on DioException catch (error) {
+        final statusCode = error.response?.statusCode;
+        if (statusCode == 404 || statusCode == 405) {
+          continue;
+        }
+        _throwFormattedError(error);
+      } catch (error) {
+        _throwFormattedError(error);
+      }
+    }
+
+    throw const AppException(
+      'Máy chủ chưa hỗ trợ đăng nhập Google cho ứng dụng.',
     );
   }
 
