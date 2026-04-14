@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 /// Chứa bảng màu dùng chung cho màn đăng nhập.
 class SignInPalette {
-  static const Color background = Colors.white;
-  static const Color primary = Color(0xFF5A54F4);
-  static const Color card = Colors.white;
-  static const Color textPrimary = Color(0xFF232635);
-  static const Color textSecondary = Color(0xFFA2A6B3);
-  static const Color textMuted = Color(0xFF8E95A5);
-  static const Color border = Color(0xFFD8DCE7);
-  static const Color divider = Color(0xFFD9DCE6);
-  static const Color inputFill = Color(0xFFEAF1FF);
-  static const Color inputBorder = Color(0xFFD2DBEE);
-  static const Color icon = Color(0xFF9AA3B4);
+  static const Color background = AppColors.background;
+  static const Color primary = AppColors.primary;
+  static const Color card = AppColors.background;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color textMuted = AppColors.textHint;
+  static const Color border = AppColors.border;
+  static const Color divider = AppColors.divider;
+  static const Color inputFill = AppColors.primarySoft;
+  static const Color inputBorder = AppColors.primaryLight;
+  static const Color icon = AppColors.textHint;
 
   const SignInPalette._();
 }

@@ -1,4 +1,5 @@
 import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_constants.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_controller.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
@@ -55,6 +56,7 @@ class _QuizDetailViewState extends State<QuizDetailView> {
 
       final changed = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
+          settings: const RouteSettings(name: AppRoutes.examRoom),
           builder: (_) => QuizRoomView(room: room),
         ),
       );

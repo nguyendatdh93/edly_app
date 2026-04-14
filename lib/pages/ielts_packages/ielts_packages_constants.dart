@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 class IeltsPackagesPalette {
-  static const Color background = Color(0xFFF3F8F7);
-  static const Color surface = Colors.white;
-  static const Color primary = Color(0xFF0F8B72);
-  static const Color textPrimary = Color(0xFF0E2E2A);
-  static const Color textSecondary = Color(0xFF4F6B66);
-  static const Color border = Color(0xFFD8E7E4);
-  static const Color chip = Color(0xFFE5F6F1);
+  static const Color background = AppColors.surface;
+  static const Color surface = AppColors.background;
+  static const Color primary = AppColors.primary;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color border = AppColors.border;
+  static const Color chip = AppColors.primarySoft;
 
   const IeltsPackagesPalette._();
 }

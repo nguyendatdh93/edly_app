@@ -1,4 +1,5 @@
 import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/home/home_view.dart';
 import 'package:edly/services/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +53,7 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
       if (!data.show) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: AppRoutes.home),
             builder: (_) => const HomeView(),
           ),
           (route) => false,
@@ -123,6 +125,7 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AppRoutes.home),
           builder: (_) => const HomeView(),
         ),
         (route) => false,

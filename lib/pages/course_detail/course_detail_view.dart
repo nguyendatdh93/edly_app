@@ -1,3 +1,4 @@
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/pages/course_detail/course_detail_constants.dart';
 import 'package:edly/pages/course_detail/course_detail_lecture_view.dart';
@@ -207,6 +208,7 @@ class _CourseDetailViewState extends State<CourseDetailView> {
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AppRoutes.lectureRoom),
         builder: (_) => CourseDetailLectureView(
           initialItem: item,
           courseSlug: data.courseSlug,

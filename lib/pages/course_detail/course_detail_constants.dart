@@ -1,37 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 class CourseDetailPalette {
-  static const Color background = Color(0xFFF6F8FC);
-  static const Color surface = Colors.white;
-  static const Color textPrimary = Color(0xFF1F2A44);
-  static const Color textSecondary = Color(0xFF6C7893);
-  static const Color textMuted = Color(0xFF99A1B5);
-  static const Color border = Color(0xFFE1E6F0);
-  static const Color info = Color(0xFF3B82F6);
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFEF4444);
+  static const Color background = AppColors.surface;
+  static const Color surface = AppColors.background;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color textMuted = AppColors.textHint;
+  static const Color border = AppColors.border;
+  static const Color info = AppColors.primary;
+  static const Color success = AppColors.correct;
+  static const Color warning = AppColors.warning;
+  static const Color danger = AppColors.wrong;
 
   const CourseDetailPalette._();
 }
 
 class CourseDetailCopy {
   static const String endpointTemplate = '/mobile/course-detail/{slug}_{id}';
-  static const String loadingMessage =
-      'Đang tải nội dung khóa học.';
-  static const String fallbackMessage =
-      '';
-  static const String genericErrorMessage =
-      'Không thể tải nội dung khóa học.';
+  static const String loadingMessage = 'Đang tải nội dung khóa học.';
+  static const String fallbackMessage = '';
+  static const String genericErrorMessage = 'Không thể tải nội dung khóa học.';
 
   const CourseDetailCopy._();
 }
 
 class CourseDetailVisual {
-  const CourseDetailVisual({
-    required this.gradient,
-    required this.accentColor,
-  });
+  const CourseDetailVisual({required this.gradient, required this.accentColor});
 
   final List<Color> gradient;
   final Color accentColor;

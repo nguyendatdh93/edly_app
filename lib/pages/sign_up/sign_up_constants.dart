@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 /// Chứa bảng màu dùng chung cho màn đăng ký.
 class SignUpPalette {
-  static const Color background = Colors.white;
-  static const Color primary = Color(0xFF5A54F4);
-  static const Color textPrimary = Color(0xFF232635);
-  static const Color textSecondary = Color(0xFFA2A6B3);
-  static const Color border = Color(0xFFD8DCE7);
-  static const Color hint = Color(0xFF7E8798);
+  static const Color background = AppColors.background;
+  static const Color primary = AppColors.primary;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color border = AppColors.border;
+  static const Color hint = AppColors.textHint;
 
   const SignUpPalette._();
 }

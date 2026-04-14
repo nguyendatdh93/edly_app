@@ -1,4 +1,5 @@
 import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/models/account_profile.dart';
 import 'package:edly/pages/home/home_view.dart';
 import 'package:edly/services/auth_repository.dart';
@@ -203,6 +204,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       if (widget.isOnboarding) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: AppRoutes.home),
             builder: (_) => const HomeView(),
           ),
           (route) => false,

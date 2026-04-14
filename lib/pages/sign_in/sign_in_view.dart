@@ -1,5 +1,6 @@
 import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/core/navigation/auth_destination.dart';
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/sign_in/sign_in_constants.dart';
 import 'package:edly/pages/sign_up/sign_up_view.dart';
 import 'package:edly/services/auth_repository.dart';
@@ -54,7 +55,10 @@ class _SignInViewState extends State<SignInView> {
       }
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => buildSignedInDestination()),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AppRoutes.home),
+          builder: (_) => buildSignedInDestination(),
+        ),
         (route) => false,
       );
     } on AppException catch (error) {
@@ -76,7 +80,12 @@ class _SignInViewState extends State<SignInView> {
   void _goToSignUp(BuildContext context) {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const SignUpView()));
+    ).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AppRoutes.signUp),
+        builder: (_) => const SignUpView(),
+      ),
+    );
   }
 
   Future<void> _submitGoogle() async {
@@ -107,7 +116,10 @@ class _SignInViewState extends State<SignInView> {
       }
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => buildSignedInDestination()),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AppRoutes.home),
+          builder: (_) => buildSignedInDestination(),
+        ),
         (route) => false,
       );
     } on AppException catch (error) {

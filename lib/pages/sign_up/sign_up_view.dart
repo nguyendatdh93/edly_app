@@ -1,5 +1,6 @@
 import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/core/navigation/auth_destination.dart';
+import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/sign_in/sign_in_view.dart';
 import 'package:edly/pages/sign_up/sign_up_constants.dart';
 import 'package:edly/services/auth_repository.dart';
@@ -68,6 +69,7 @@ class _SignUpViewState extends State<SignUpView> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AppRoutes.home),
           builder: (_) => buildSignedInDestination(),
         ),
         (route) => false,
@@ -106,6 +108,7 @@ class _SignUpViewState extends State<SignUpView> {
 
     navigator.push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AppRoutes.signIn),
         builder: (_) => const SignInView(),
       ),
     );

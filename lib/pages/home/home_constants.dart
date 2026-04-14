@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 class HomePalette {
-  static const Color background = Color(0xFFF6F8FC);
-  static const Color surface = Colors.white;
-  static const Color primary = Color(0xFF5A54F4);
-  static const Color secondary = Color(0xFF17B97C);
-  static const Color textPrimary = Color(0xFF1F2A44);
-  static const Color textSecondary = Color(0xFF6C7893);
-  static const Color textMuted = Color(0xFF99A1B5);
-  static const Color border = Color(0xFFE1E6F0);
-  static const Color warning = Color(0xFFFFB020);
-  static const Color chipBlue = Color(0xFFEAF0FF);
-  static const Color chipGreen = Color(0xFFE6F8F1);
+  static const Color background = AppColors.surface;
+  static const Color surface = AppColors.background;
+  static const Color primary = AppColors.primary;
+  static const Color secondary = AppColors.primaryDark;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color textMuted = AppColors.textHint;
+  static const Color border = AppColors.border;
+  static const Color warning = AppColors.warning;
+  static const Color chipBlue = AppColors.primarySoft;
+  static const Color chipGreen = AppColors.primarySoft;
 
   const HomePalette._();
 }

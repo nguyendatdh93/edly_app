@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:edly/core/theme/app_colors.dart';
 
 class QuizDetailPalette {
-  static const Color background = Color(0xFFF5F7FC);
-  static const Color surface = Colors.white;
-  static const Color border = Color(0xFFE2E8F0);
-  static const Color primary = Color(0xFF1D4ED8);
-  static const Color success = Color(0xFF16A34A);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFDC2626);
-  static const Color textPrimary = Color(0xFF1E293B);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color background = AppColors.surface;
+  static const Color surface = AppColors.background;
+  static const Color border = AppColors.border;
+  static const Color primary = AppColors.primaryDark;
+  static const Color success = AppColors.correct;
+  static const Color warning = AppColors.warning;
+  static const Color danger = AppColors.wrong;
+  static const Color textPrimary = AppColors.textPrimary;
+  static const Color textSecondary = AppColors.textSecondary;
+  static const Color textMuted = AppColors.textHint;
 
   const QuizDetailPalette._();
 }
