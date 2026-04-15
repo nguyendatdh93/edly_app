@@ -218,10 +218,15 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(22, 24, 22, 10),
+                                padding: const EdgeInsets.fromLTRB(
+                                  22,
+                                  24,
+                                  22,
+                                  10,
+                                ),
                                 child: Center(
                                   child: Text(
-                                    'Cập nhật thông tin tài khoản',
+                                    'Hoàn tất hồ sơ',
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
@@ -234,7 +239,12 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
+                                padding: const EdgeInsets.fromLTRB(
+                                  22,
+                                  0,
+                                  22,
+                                  22,
+                                ),
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(14),
@@ -243,7 +253,8 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Icon(
                                         Icons.info_outline_rounded,
@@ -269,7 +280,12 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
+                                padding: const EdgeInsets.fromLTRB(
+                                  22,
+                                  0,
+                                  22,
+                                  22,
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -310,19 +326,23 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                           return null;
                                         }
 
-                                        final phone = _normalizePhone(value ?? '');
+                                        final phone = _normalizePhone(
+                                          value ?? '',
+                                        );
                                         if (phone.isEmpty) {
                                           return 'Không được để trống!';
                                         }
 
-                                        if (!RegExp(r'^(0|\+84)?[35789]\d{8}$')
-                                            .hasMatch(phone)) {
+                                        if (!RegExp(
+                                          r'^(0|\+84)?[35789]\d{8}$',
+                                        ).hasMatch(phone)) {
                                           return 'Số điện thoại không chính xác!';
                                         }
 
                                         return null;
                                       },
-                                      onChanged: (_) => _clearFieldError('phone'),
+                                      onChanged: (_) =>
+                                          _clearFieldError('phone'),
                                       forceErrorText: _fieldErrors['phone'],
                                       decoration: InputDecoration(
                                         hintText: 'Nhập số điện thoại của bạn',
@@ -333,19 +353,25 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                         filled: true,
                                         fillColor: const Color(0xFFFBFBFB),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                           borderSide: const BorderSide(
                                             color: Color(0xFFE5E7EB),
                                           ),
                                         ),
                                         disabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                           borderSide: const BorderSide(
                                             color: Color(0xFFE5E7EB),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                           borderSide: const BorderSide(
                                             color: Color(0xFF3B82F6),
                                             width: 1.2,
@@ -376,7 +402,9 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                             setState(() {
                                               _examInterestSat = value ?? false;
                                             });
-                                            _clearFieldError('exam_interest_sat');
+                                            _clearFieldError(
+                                              'exam_interest_sat',
+                                            );
                                           },
                                         ),
                                         _InterestCheckbox(
@@ -384,14 +412,18 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                           value: _examInterestIelts,
                                           onChanged: (value) {
                                             setState(() {
-                                              _examInterestIelts = value ?? false;
+                                              _examInterestIelts =
+                                                  value ?? false;
                                             });
-                                            _clearFieldError('exam_interest_sat');
+                                            _clearFieldError(
+                                              'exam_interest_sat',
+                                            );
                                           },
                                         ),
                                       ],
                                     ),
-                                    if (_fieldErrors['exam_interest_sat'] != null) ...[
+                                    if (_fieldErrors['exam_interest_sat'] !=
+                                        null) ...[
                                       const SizedBox(height: 8),
                                       Text(
                                         _fieldErrors['exam_interest_sat']!,
@@ -485,7 +517,9 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFFFEEF0),
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                           border: Border.all(
                                             color: const Color(0xFFFFCDD5),
                                           ),
@@ -507,7 +541,12 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                               ),
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
+                                padding: const EdgeInsets.fromLTRB(
+                                  22,
+                                  16,
+                                  22,
+                                  22,
+                                ),
                                 decoration: const BoxDecoration(
                                   border: Border(
                                     top: BorderSide(color: Color(0xFFF1F5F9)),
@@ -518,7 +557,10 @@ class _AccountOnboardingViewState extends State<AccountOnboardingView> {
                                   style: FilledButton.styleFrom(
                                     backgroundColor: const Color(0xFF14B8A6),
                                     foregroundColor: Colors.white,
-                                    minimumSize: const Size(double.infinity, 52),
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      52,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
@@ -583,9 +625,9 @@ class _InterestCheckbox extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF2B313A),
-                  fontWeight: FontWeight.w600,
-                ),
+              color: const Color(0xFF2B313A),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -644,9 +686,9 @@ class _RoleRadio extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF2B313A),
-                  fontWeight: FontWeight.w600,
-                ),
+              color: const Color(0xFF2B313A),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

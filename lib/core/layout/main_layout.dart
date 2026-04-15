@@ -41,11 +41,14 @@ class MainLayout extends StatelessWidget {
           return child;
         }
 
+        final bottomNavExtent =
+            _bottomNavHeight + MediaQuery.paddingOf(context).bottom;
+
         return Stack(
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: const EdgeInsets.only(bottom: _bottomNavHeight),
+              padding: EdgeInsets.only(bottom: bottomNavExtent),
               child: child,
             ),
             Positioned(

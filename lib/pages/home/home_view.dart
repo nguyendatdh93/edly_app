@@ -2,17 +2,12 @@ import 'dart:async';
 
 import 'package:edly/pages/course_detail/course_detail_view.dart';
 import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/pages/admin/admin_dashboard_view.dart';
-import 'package:edly/pages/account_profile/account_profile_view.dart';
 import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/home/home_models.dart';
 import 'package:edly/pages/home/home_repository.dart';
-import 'package:edly/pages/ielts_packages/ielts_packages_view.dart';
-import 'package:edly/pages/sat_packages/sat_packages_view.dart';
-import 'package:edly/pages/sign_in/sign_in_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/mobile_payment_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -110,11 +105,25 @@ class _HomeViewState extends State<HomeView> {
     await _reloadDashboard();
   }
 
+  Future<void> _openDepositSheet() async {
+    final result = await showDepositSheet(context);
+    if (!mounted || result?.completed != true) {
+      return;
+    }
+
+    await _reloadDashboard();
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result!.message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomePalette.background,
-      drawer: const _HomeDrawer(),
       body: Builder(
         builder: (context) {
           return RefreshIndicator(
@@ -127,13 +136,7 @@ class _HomeViewState extends State<HomeView> {
                   backgroundColor: Colors.white,
                   surfaceTintColor: Colors.white,
                   titleSpacing: 16,
-                  leading: IconButton(
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                    icon: const Icon(
-                      Icons.menu_rounded,
-                      color: HomePalette.textPrimary,
-                    ),
-                  ),
+                  automaticallyImplyLeading: false,
                   title: Row(
                     children: [
                       Image.asset(
@@ -142,17 +145,16 @@ class _HomeViewState extends State<HomeView> {
                         fit: BoxFit.contain,
                       ),
                       const Spacer(),
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: HomePalette.chipGreen,
-                          borderRadius: BorderRadius.circular(12),
+                      IconButton.filledTonal(
+                        onPressed: _openDepositSheet,
+                        style: IconButton.styleFrom(
+                          backgroundColor: HomePalette.chipGreen,
+                          foregroundColor: HomePalette.secondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.account_balance_wallet_outlined,
-                          color: HomePalette.secondary,
-                        ),
+                        icon: const Icon(Icons.account_balance_wallet_outlined),
                       ),
                     ],
                   ),
@@ -373,337 +375,6 @@ class _HomeSections extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _HomeDrawer extends StatelessWidget {
-  const _HomeDrawer();
-
-  Future<void> _openAccountProfile(BuildContext context) async {
-    final navigator = Navigator.of(context);
-    navigator.pop();
-    await navigator.push(
-      MaterialPageRoute<void>(builder: (_) => const AccountProfileView()),
-    );
-  }
-
-  Future<void> _goToSignIn(BuildContext context) async {
-    await AuthRepository.instance.signOut();
-
-    if (!context.mounted) {
-      return;
-    }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const SignInView()),
-    );
-  }
-
-  Future<void> _openAdminDashboard(BuildContext context) async {
-    final navigator = Navigator.of(context);
-    navigator.pop();
-    await navigator.push(
-      MaterialPageRoute<void>(builder: (_) => const AdminDashboardView()),
-    );
-  }
-
-  Future<void> _openDrawerDestination(
-    BuildContext context,
-    HomeDrawerItemData item,
-  ) async {
-    final title = item.title.trim().toLowerCase();
-
-    if (title == 'sat' || title == 'sat/act' || title.contains('sat')) {
-      final navigator = Navigator.of(context);
-      navigator.pop();
-      await navigator.push(
-        MaterialPageRoute<void>(builder: (_) => const SatPackagesView()),
-      );
-      return;
-    }
-
-    if (title == 'ielts' || title.contains('ielts')) {
-      final navigator = Navigator.of(context);
-      navigator.pop();
-      await navigator.push(
-        MaterialPageRoute<void>(builder: (_) => const IeltsPackagesView()),
-      );
-      return;
-    }
-
-    Navigator.of(context).pop();
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Mục "${item.title}" đang được build native trên app, tạm thời chưa mở.',
-          ),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final canAccessAdminPortal = AuthRepository.instance.isAdminPortalUser;
-
-    return Drawer(
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Image.asset(
-                    HomeContent.logoAsset,
-                    height: 38,
-                    fit: BoxFit.contain,
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const _DrawerProfileCard(),
-              const SizedBox(height: 22),
-              ListTile(
-                onTap: () => _openAccountProfile(context),
-                leading: const Icon(
-                  Icons.badge_outlined,
-                  color: HomePalette.primary,
-                ),
-                title: Text(
-                  'Trang cá nhân',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: HomePalette.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: Text(
-                  'Cập nhật thông tin tài khoản',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: HomePalette.textSecondary,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: HomePalette.textMuted,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                tileColor: HomePalette.chipBlue,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 2,
-                ),
-              ),
-              const SizedBox(height: 14),
-              if (canAccessAdminPortal) ...[
-                ListTile(
-                  onTap: () => _openAdminDashboard(context),
-                  leading: const Icon(
-                    Icons.admin_panel_settings_outlined,
-                    color: HomePalette.primary,
-                  ),
-                  title: Text(
-                    'Trang quản trị',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: HomePalette.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Mở dashboard quản trị trên mobile',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: HomePalette.textSecondary,
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: HomePalette.textMuted,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  tileColor: HomePalette.chipGreen,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 2,
-                  ),
-                ),
-                const SizedBox(height: 14),
-              ],
-              Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: HomeContent.drawerItems.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final item = HomeContent.drawerItems[index];
-                    return ListTile(
-                      onTap: () => _openDrawerDestination(context, item),
-                      leading: Icon(item.icon, color: HomePalette.primary),
-                      title: Text(
-                        item.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: HomePalette.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      trailing: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: HomePalette.textMuted,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () async => _goToSignIn(context),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFE9EC),
-                    foregroundColor: const Color(0xFFE5485D),
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text(
-                    'Đăng xuất',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DrawerProfileCard extends StatelessWidget {
-  const _DrawerProfileCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final user = AuthRepository.instance.currentUser;
-    final balance = user?.balance;
-    final currencyFormat = NumberFormat.decimalPattern('vi_VN');
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: HomePalette.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: HomePalette.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: HomePalette.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              user?.initials ?? 'E',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user == null ? 'Chào bạn' : 'Xin chào',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: HomePalette.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  user?.name.isNotEmpty == true
-                      ? user!.name
-                      : 'Khám phá khóa học Edly',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: HomePalette.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  user?.subtitle ?? 'Đăng nhập để đồng bộ tiến độ học tập',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: HomePalette.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: HomePalette.chipGreen,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 16,
-                        color: HomePalette.secondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          balance == null
-                              ? 'Số dư đang cập nhật'
-                              : 'Số dư: ${currencyFormat.format(balance)}đ',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: HomePalette.secondary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

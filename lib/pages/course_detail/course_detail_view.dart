@@ -7,6 +7,7 @@ import 'package:edly/pages/course_detail/course_detail_repository.dart';
 import 'package:edly/pages/home/home_models.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/mobile_payment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -120,8 +121,25 @@ class _CourseDetailViewState extends State<CourseDetailView> {
     });
 
     try {
-      final result = await CourseDetailRepository.instance
-          .purchaseCourseByBalance(detail: data);
+      final result = await showContentPaymentSheet(
+        context: context,
+        title: data.hero.title,
+        amount: purchase.currentPrice ?? 0,
+        contentType: 'course',
+        contentId: data.coursePublicId.isNotEmpty
+            ? data.coursePublicId
+            : data.courseId,
+        onBalancePurchase: () {
+          return CourseDetailRepository.instance.purchaseCourseByBalance(
+            detail: data,
+          );
+        },
+      );
+
+      if (!mounted || result?.completed != true) {
+        return;
+      }
+
       await AuthRepository.instance.refreshCurrentUser();
       await _reload();
 
@@ -130,14 +148,7 @@ class _CourseDetailViewState extends State<CourseDetailView> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
-    } on AppException catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ).showSnackBar(SnackBar(content: Text(result!.message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -806,7 +817,7 @@ class _PurchaseCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Thanh toán trực tiếp bằng số dư ví trong app.',
+                      'Chọn thanh toán bằng số dư hoặc QR chuyển khoản.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: CourseDetailPalette.textSecondary,
                         height: 1.45,
@@ -876,7 +887,9 @@ class _PurchaseCard extends StatelessWidget {
                       )
                     : const Icon(Icons.account_balance_wallet_rounded),
                 label: Text(
-                  isPurchasing ? 'Đang thanh toán...' : 'Mua gói bằng số dư',
+                  isPurchasing
+                      ? 'Đang mở thanh toán...'
+                      : 'Chọn phương thức thanh toán',
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),

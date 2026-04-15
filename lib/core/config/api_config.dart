@@ -45,5 +45,30 @@ class ApiConfig {
         : resolved;
   }
 
+  static String get pusherAppKey => const String.fromEnvironment(
+    'PUSHER_APP_KEY',
+    defaultValue: 'RsyyJOXQL28yFAiXEdYqSDn27d78NcqK',
+  ).trim();
+
+  static String get pusherHost => const String.fromEnvironment(
+    'PUSHER_HOST',
+    defaultValue: 'soketi.tailieuchuan.vn',
+  ).trim();
+
+  static int get pusherPort {
+    final value = const String.fromEnvironment(
+      'PUSHER_PORT',
+      defaultValue: '443',
+    ).trim();
+    return int.tryParse(value) ?? 443;
+  }
+
+  static String get pusherScheme => const String.fromEnvironment(
+    'PUSHER_SCHEME',
+    defaultValue: 'https',
+  ).trim();
+
+  static bool get pusherUseTls => pusherScheme.toLowerCase() == 'https';
+
   const ApiConfig._();
 }

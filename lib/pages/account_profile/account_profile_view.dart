@@ -2,14 +2,12 @@ import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/models/account_profile.dart';
 import 'package:edly/pages/home/home_view.dart';
+import 'package:edly/pages/menu/user_course_list_view.dart';
 import 'package:edly/services/auth_repository.dart';
 import 'package:flutter/material.dart';
 
 class AccountProfileView extends StatefulWidget {
-  const AccountProfileView({
-    super.key,
-    this.isOnboarding = false,
-  });
+  const AccountProfileView({super.key, this.isOnboarding = false});
 
   final bool isOnboarding;
 
@@ -127,10 +125,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     }
   }
 
-  void _applyProfile(
-    AccountProfile profile,
-    AccountProfileFormSchema form,
-  ) {
+  void _applyProfile(AccountProfile profile, AccountProfileFormSchema form) {
     _nameController.text = profile.name;
     _emailController.text = profile.email ?? '';
     _selectedBirthday = _sanitizeSelectValue(
@@ -155,10 +150,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     );
   }
 
-  Future<void> _reloadLocationOptions({
-    int? provinceId,
-    int? districtId,
-  }) {
+  Future<void> _reloadLocationOptions({int? provinceId, int? districtId}) {
     return _loadProfile(
       provinceId: provinceId,
       districtId: districtId,
@@ -198,8 +190,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
         _applyProfile(response.profile, response.form);
       });
 
-      final message =
-          response.message ?? 'Cập nhật thông tin tài khoản thành công.';
+      final message = response.message ?? 'Cập nhật trang cá nhân thành công.';
 
       if (widget.isOnboarding) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -212,9 +203,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } on ApiValidationException catch (error) {
       if (!mounted) {
         return;
@@ -301,6 +292,32 @@ class _AccountProfileViewState extends State<AccountProfileView> {
     return 'Không thể tải thông tin tài khoản.';
   }
 
+  void _handleProfileAction(String title) {
+    if (title == 'Gói đã mua') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              const UserCourseListView(mode: UserCourseListMode.purchased),
+        ),
+      );
+      return;
+    }
+
+    if (title == 'Tiến độ học tập') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              const UserCourseListView(mode: UserCourseListMode.progress),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$title đang được đồng bộ từ web.')));
+  }
+
   String? _sanitizeSelectValue(String? value, List<String> options) {
     if (value == null || value.isEmpty) {
       return null;
@@ -330,11 +347,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _screenData == null
-                  ? _ProfileErrorState(
-                      message: _errorMessage ?? 'Không thể tải dữ liệu hồ sơ.',
-                      onRetry: _loadProfile,
-                    )
-                  : _buildLoadedState(context, _screenData!),
+              ? _ProfileErrorState(
+                  message: _errorMessage ?? 'Không thể tải dữ liệu hồ sơ.',
+                  onRetry: _loadProfile,
+                )
+              : _buildLoadedState(context, _screenData!),
         ),
       ),
     );
@@ -381,7 +398,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                   if (!widget.isOnboarding) const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Cập nhật thông tin tài khoản',
+                      widget.isOnboarding ? 'Hoàn tất hồ sơ' : 'Trang cá nhân',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -391,33 +408,34 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  widget.isOnboarding
-                      ? 'Hoàn tất hồ sơ sau khi đăng ký'
-                      : 'Đồng bộ thông tin tài khoản với web',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+              if (widget.isOnboarding) ...[
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Hoàn tất hồ sơ sau khi đăng ký',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                widget.isOnboarding
-                    ? 'Thêm vài thông tin cơ bản để Edly gợi ý lộ trình học phù hợp và đồng bộ trải nghiệm như trên web.'
-                    : 'Bạn có thể cập nhật các thông tin cá nhân đang được web sử dụng để cá nhân hóa nội dung học.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  height: 1.45,
+                const SizedBox(height: 14),
+                Text(
+                  'Thêm vài thông tin cơ bản để Edly gợi ý lộ trình học phù hợp.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    height: 1.45,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -433,9 +451,14 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                 children: [
                   _ProfileSummaryCard(profile: profile),
                   const SizedBox(height: 16),
+                  _ProfileActionGrid(
+                    isStaff:
+                        AuthRepository.instance.currentUser?.isStaff ?? false,
+                    onActionTap: _handleProfileAction,
+                  ),
+                  const SizedBox(height: 16),
                   _SectionCard(
                     title: 'Thông tin cơ bản',
-                    subtitle: 'Những dữ liệu cần thiết để hoàn thiện hồ sơ.',
                     child: Column(
                       children: [
                         _FieldLabel('Họ và tên'),
@@ -471,7 +494,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                             errorText: _fieldErrors['email'],
                             onChanged: (_) => _clearFieldError('email'),
                             validator: (_) {
-                              if (!form.email.editable || !form.email.required) {
+                              if (!form.email.editable ||
+                                  !form.email.required) {
                                 return null;
                               }
 
@@ -516,7 +540,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                     _clearFieldError('user_type');
                                   },
                             validator: (value) {
-                              if (!form.userType.required || !form.userType.enabled) {
+                              if (!form.userType.required ||
+                                  !form.userType.enabled) {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
@@ -551,7 +576,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                     _clearFieldError('birthday');
                                   },
                             validator: (value) {
-                              if (!form.birthday.required || !form.birthday.enabled) {
+                              if (!form.birthday.required ||
+                                  !form.birthday.enabled) {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
@@ -570,8 +596,6 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                     const SizedBox(height: 16),
                     _SectionCard(
                       title: 'Khu vực học tập',
-                      subtitle:
-                          'Thông tin khu vực giúp web và app gợi ý nội dung sát hơn.',
                       child: Column(
                         children: [
                           if (form.province.enabled) ...[
@@ -605,7 +629,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       );
                                     },
                               validator: (value) {
-                                if (!form.province.required || !form.province.enabled) {
+                                if (!form.province.required ||
+                                    !form.province.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -646,7 +671,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       );
                                     },
                               validator: (value) {
-                                if (!form.district.required || !form.district.enabled) {
+                                if (!form.district.required ||
+                                    !form.district.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -681,7 +707,8 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                       _clearFieldError('school_id');
                                     },
                               validator: (value) {
-                                if (!form.school.required || !form.school.enabled) {
+                                if (!form.school.required ||
+                                    !form.school.enabled) {
                                   return null;
                                 }
                                 if (value == null) {
@@ -802,7 +829,8 @@ class _ProfileSummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (profile.roleName != null && profile.roleName!.isNotEmpty) ...[
+                if (profile.roleName != null &&
+                    profile.roleName!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     profile.roleName!,
@@ -835,15 +863,114 @@ class _ProfileSummaryCard extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
+class _ProfileActionGrid extends StatelessWidget {
+  const _ProfileActionGrid({required this.isStaff, required this.onActionTap});
+
+  final bool isStaff;
+  final ValueChanged<String> onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <_ProfileActionData>[
+      const _ProfileActionData(
+        title: 'Đổi mật khẩu',
+        icon: Icons.lock_reset_rounded,
+      ),
+      const _ProfileActionData(
+        title: 'Quản lý thiết bị',
+        icon: Icons.devices_other_rounded,
+      ),
+      const _ProfileActionData(
+        title: 'Gói đã mua',
+        icon: Icons.shopping_bag_outlined,
+      ),
+      const _ProfileActionData(
+        title: 'Tiến độ học tập',
+        icon: Icons.bar_chart_rounded,
+      ),
+      if (isStaff)
+        const _ProfileActionData(
+          title: 'Thông tin thanh toán',
+          icon: Icons.receipt_long_rounded,
+        ),
+    ];
+
+    return _SectionCard(
+      title: 'Chức năng tài khoản',
+      child: Column(
+        children: [
+          for (var index = 0; index < actions.length; index++) ...[
+            _ProfileActionTile(
+              data: actions[index],
+              onTap: () => onActionTap(actions[index].title),
+            ),
+            if (index < actions.length - 1)
+              const Divider(height: 1, color: Color(0xFFE2E8F3)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileActionData {
+  const _ProfileActionData({required this.title, required this.icon});
 
   final String title;
-  final String subtitle;
+  final IconData icon;
+}
+
+class _ProfileActionTile extends StatelessWidget {
+  const _ProfileActionTile({required this.data, required this.onTap});
+
+  final _ProfileActionData data;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7F0FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(data.icon, color: const Color(0xFF0F67F4)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  data.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF17233A),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF8A96AA)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.child});
+
+  final String title;
   final Widget child;
 
   @override
@@ -868,14 +995,6 @@ class _SectionCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF6E7C92),
-              height: 1.4,
-            ),
-          ),
           const SizedBox(height: 18),
           child,
         ],
@@ -894,9 +1013,9 @@ class _FieldLabel extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w800,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w800,
+      ),
     );
   }
 }
@@ -934,9 +1053,9 @@ class _ProfileTextField extends StatelessWidget {
       onChanged: onChanged,
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w600,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
@@ -955,10 +1074,7 @@ class _ProfileTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: Color(0xFF0F67F4),
-            width: 1.2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF0F67F4), width: 1.2),
         ),
         errorMaxLines: 2,
       ),
@@ -996,10 +1112,7 @@ class _ProfileSelectField<T> extends StatelessWidget {
         fillColor: onChanged == null
             ? const Color(0xFFF1F4F8)
             : const Color(0xFFF7F9FD),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFD9E2F0)),
@@ -1010,10 +1123,7 @@ class _ProfileSelectField<T> extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: Color(0xFF0F67F4),
-            width: 1.2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF0F67F4), width: 1.2),
         ),
         errorText: errorText,
         errorMaxLines: 2,
@@ -1023,9 +1133,9 @@ class _ProfileSelectField<T> extends StatelessWidget {
       isExpanded: true,
       borderRadius: BorderRadius.circular(18),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: const Color(0xFF17233A),
-            fontWeight: FontWeight.w600,
-          ),
+        color: const Color(0xFF17233A),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
@@ -1048,19 +1158,16 @@ class _InlineErrorNotice extends StatelessWidget {
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFC7254E),
-              fontWeight: FontWeight.w700,
-            ),
+          color: const Color(0xFFC7254E),
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 }
 
 class _ProfileErrorState extends StatelessWidget {
-  const _ProfileErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ProfileErrorState({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;
@@ -1083,15 +1190,12 @@ class _ProfileErrorState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: const Color(0xFF526176),
-                    height: 1.4,
-                  ),
+                color: const Color(0xFF526176),
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 18),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Thử lại'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),

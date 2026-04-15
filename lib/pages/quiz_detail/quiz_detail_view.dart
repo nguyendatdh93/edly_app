@@ -1,19 +1,16 @@
 import 'package:edly/core/network/app_exception.dart';
-import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_constants.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_controller.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
 import 'package:edly/pages/quiz_detail/quiz_room_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/mobile_payment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class QuizDetailView extends StatefulWidget {
-  const QuizDetailView({
-    super.key,
-    required this.quizId,
-  });
+  const QuizDetailView({super.key, required this.quizId});
 
   final String quizId;
 
@@ -48,18 +45,17 @@ class _QuizDetailViewState extends State<QuizDetailView> {
     });
 
     try {
-      final room = await QuizDetailRepository.instance.fetchQuizRoom(widget.quizId);
+      final room = await QuizDetailRepository.instance.fetchQuizRoom(
+        widget.quizId,
+      );
 
       if (!mounted) {
         return;
       }
 
-      final changed = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: AppRoutes.examRoom),
-          builder: (_) => QuizRoomView(room: room),
-        ),
-      );
+      final changed = await Navigator.of(
+        context,
+      ).push<bool>(MaterialPageRoute(builder: (_) => QuizRoomView(room: room)));
 
       if (changed == true) {
         await _controller.load(widget.quizId);
@@ -68,9 +64,9 @@ class _QuizDetailViewState extends State<QuizDetailView> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -84,31 +80,58 @@ class _QuizDetailViewState extends State<QuizDetailView> {
     final courseId = data.course?.id;
     if (courseId == null || courseId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không xác định được khóa học của đề thi.')),
+        const SnackBar(
+          content: Text('Không xác định được khóa học của đề thi.'),
+        ),
       );
       return;
     }
 
-    final result = await _controller.purchaseByBalance(
-      quizId: data.quiz.id,
+    final result = await showContentPaymentSheet(
+      context: context,
+      title: data.quiz.name,
+      amount: data.quiz.price,
+      contentType: 'quiz',
+      contentId: data.quiz.id,
       courseId: courseId,
+      onBalancePurchase: () async {
+        final result = await _controller.purchaseByBalance(
+          quizId: data.quiz.id,
+          courseId: courseId,
+        );
+        if (result == null) {
+          throw AppException(
+            _controller.errorMessage ??
+                'Không thể mua quyền vào phòng thi lúc này.',
+          );
+        }
+        return result;
+      },
     );
 
-    if (!mounted || result == null) {
+    if (!mounted || result?.completed != true) {
       return;
     }
 
     await AuthRepository.instance.refreshCurrentUser();
+    await _controller.load(widget.quizId);
     if (!mounted) {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result!.message)));
   }
 
   void _downloadQuiz(QuizDetailData data) {
+    if (!data.access.canAccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bạn cần mua đề thi để tải xuống.')),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Chức năng tải xuống đang được đồng bộ từ web backend.'),
@@ -139,32 +162,33 @@ class _QuizDetailViewState extends State<QuizDetailView> {
           body: _controller.isLoading && data == null
               ? const Center(child: CircularProgressIndicator())
               : data == null
-                  ? _ErrorState(
-                      message:
-                          _controller.errorMessage ?? 'Không tải được dữ liệu đề thi.',
-                      onRetry: () => _controller.load(widget.quizId),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _controller.load(widget.quizId),
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          _HeroSection(
-                            data: data,
-                            isBusy: _controller.isPurchasing || _isOpeningRoom,
-                            onOpenRoom: _openQuizRoom,
-                            onPurchase: () => _purchaseQuiz(data),
-                            onDownload: () => _downloadQuiz(data),
-                          ),
-                          const SizedBox(height: 14),
-                          _OverviewStats(data: data),
-                          const SizedBox(height: 14),
-                          _ModuleStructureCard(data: data),
-                          const SizedBox(height: 14),
-                          _ProgressCard(history: data.history),
-                        ],
+              ? _ErrorState(
+                  message:
+                      _controller.errorMessage ??
+                      'Không tải được dữ liệu đề thi.',
+                  onRetry: () => _controller.load(widget.quizId),
+                )
+              : RefreshIndicator(
+                  onRefresh: () => _controller.load(widget.quizId),
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _HeroSection(
+                        data: data,
+                        isBusy: _controller.isPurchasing || _isOpeningRoom,
+                        onOpenRoom: _openQuizRoom,
+                        onPurchase: () => _purchaseQuiz(data),
+                        onDownload: () => _downloadQuiz(data),
                       ),
-                    ),
+                      const SizedBox(height: 14),
+                      _OverviewStats(data: data),
+                      const SizedBox(height: 14),
+                      _ModuleStructureCard(data: data),
+                      const SizedBox(height: 14),
+                      _ProgressCard(history: data.history),
+                    ],
+                  ),
+                ),
         );
       },
     );
@@ -195,7 +219,9 @@ class _HeroSection extends StatelessWidget {
         ? '-'
         : DateFormat('dd/MM/yyyy').format(quiz.updatedAt!);
     final statusLabel = hasAccess ? 'Đã mua' : 'Chưa mua';
-    final statusColor = hasAccess ? const Color(0xFF6EE7B7) : const Color(0xFFFDE68A);
+    final statusColor = hasAccess
+        ? const Color(0xFF6EE7B7)
+        : const Color(0xFFFDE68A);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -265,24 +291,28 @@ class _HeroSection extends StatelessWidget {
                   icon: const Icon(Icons.shopping_cart_checkout_rounded),
                   label: const Text('Mua ngay'),
                 ),
-              OutlinedButton.icon(
-                onPressed: isBusy || !hasAccess ? null : onOpenRoom,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+              if (hasAccess) ...[
+                OutlinedButton.icon(
+                  onPressed: isBusy ? null : onOpenRoom,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  icon: const Icon(Icons.replay_rounded),
+                  label: const Text('Làm lại từ đầu'),
                 ),
-                icon: const Icon(Icons.replay_rounded),
-                label: const Text('Làm lại từ đầu'),
-              ),
-              OutlinedButton.icon(
-                onPressed: isBusy ? null : onDownload,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF34D399),
-                  side: const BorderSide(color: Color(0xFF34D399)),
+                OutlinedButton.icon(
+                  onPressed: isBusy ? null : onDownload,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF34D399),
+                    side: const BorderSide(color: Color(0xFF34D399)),
+                  ),
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('Tải xuống'),
                 ),
-                icon: const Icon(Icons.download_rounded),
-                label: const Text('Tải xuống'),
-              ),
+              ],
             ],
           ),
         ],
@@ -310,8 +340,14 @@ class _OverviewStats extends StatelessWidget {
       child: Row(
         children: [
           _OverviewCell(label: 'Câu hỏi', value: '${quiz.questionCount}'),
-          _OverviewCell(label: 'Thời gian', value: _formatTime(_displayMinutes(quiz))),
-          _OverviewCell(label: 'Loại', value: data.room.isExam ? 'Bài thi' : 'Bài tập'),
+          _OverviewCell(
+            label: 'Thời gian',
+            value: _formatTime(_displayMinutes(quiz)),
+          ),
+          _OverviewCell(
+            label: 'Loại',
+            value: data.room.isExam ? 'Bài thi' : 'Bài tập',
+          ),
           _OverviewCell(label: 'Lượt thi', value: '${data.history.length}'),
         ],
       ),
@@ -320,10 +356,7 @@ class _OverviewStats extends StatelessWidget {
 }
 
 class _OverviewCell extends StatelessWidget {
-  const _OverviewCell({
-    required this.label,
-    required this.value,
-  });
+  const _OverviewCell({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -436,11 +469,7 @@ class _ModuleStructureCard extends StatelessWidget {
 }
 
 class _Tag extends StatelessWidget {
-  const _Tag({
-    required this.text,
-    required this.bg,
-    required this.color,
-  });
+  const _Tag({required this.text, required this.bg, required this.color});
 
   final String text;
   final Color bg;
@@ -456,10 +485,7 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -520,7 +546,9 @@ class _ProgressCard extends StatelessWidget {
                 if (maxScoreItem.$2 != null)
                   Text(
                     'ngày ${DateFormat('dd/MM/yyyy').format(maxScoreItem.$2!)}',
-                    style: const TextStyle(color: QuizDetailPalette.textSecondary),
+                    style: const TextStyle(
+                      color: QuizDetailPalette.textSecondary,
+                    ),
                   ),
               ],
             ),
@@ -595,10 +623,7 @@ class _ProgressRow extends StatelessWidget {
 }
 
 class _MetaText extends StatelessWidget {
-  const _MetaText({
-    required this.label,
-    required this.value,
-  });
+  const _MetaText({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -608,10 +633,7 @@ class _MetaText extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(color: Color(0xFFD7C9D2)),
-        ),
+        Text('$label: ', style: const TextStyle(color: Color(0xFFD7C9D2))),
         Text(
           value,
           style: const TextStyle(
@@ -625,10 +647,7 @@ class _MetaText extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;
@@ -653,10 +672,7 @@ class _ErrorState extends StatelessWidget {
               style: const TextStyle(color: QuizDetailPalette.textSecondary),
             ),
             const SizedBox(height: 10),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Thử lại'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),
@@ -696,7 +712,10 @@ int _averageScore(List<QuizHistoryItem> history) {
 }
 
 String _latestDate(List<QuizHistoryItem> history) {
-  final dates = history.map((item) => item.createdAt).whereType<DateTime>().toList();
+  final dates = history
+      .map((item) => item.createdAt)
+      .whereType<DateTime>()
+      .toList();
   if (dates.isEmpty) {
     return '-';
   }
