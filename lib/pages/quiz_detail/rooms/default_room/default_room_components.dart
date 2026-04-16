@@ -1,4 +1,4 @@
-import 'package:edupen/pages/quiz_detail/rooms/default_room/time.dart';
+﻿import 'package:edupen/pages/quiz_detail/rooms/default_room/time.dart';
 import 'package:flutter/material.dart';
 
 class DefaultRoomHeader extends StatelessWidget {
@@ -80,7 +80,7 @@ class DefaultRoomHeader extends StatelessWidget {
           ],
           SizedBox(width: compact ? 4 : 6),
           SizedBox(
-            height: compact ? 30 : 32,
+            height: compact ? 24 : 26,
             child: FilledButton(
               onPressed: isSubmitting ? null : onSubmit,
               style: FilledButton.styleFrom(
@@ -152,7 +152,7 @@ class DefaultRoomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseHeight = compact ? 14.0 : 15.0;
+    final baseHeight = compact ? 20.0 : 22.0;
     final textSize = compact ? 11.0 : 12.0;
     final tinyGap = compact ? 4.0 : 6.0;
 
@@ -204,31 +204,111 @@ class DefaultRoomActionBar extends StatelessWidget {
                       height: baseHeight,
                       compact: compact,
                     ),
-                    SizedBox(width: tinyGap),
-                    _MiniActionButton(
-                      icon: Icons.arrow_back_rounded,
-                      label: 'Sau',
-                      onTap: canPrevious ? onPrevious : null,
-                      height: baseHeight,
-                      compact: compact,
-                    ),
-                    SizedBox(width: tinyGap),
-                    _MiniActionButton(
-                      icon: canNext
-                          ? Icons.arrow_forward_rounded
-                          : Icons.send_rounded,
-                      label: canNext ? 'Trước' : 'Nộp',
-                      onTap: isSubmitting ? null : onNext,
-                      height: baseHeight,
-                      compact: compact,
-                      primary: true,
-                    ),
                   ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class DefaultRoomSideNavigationButton extends StatelessWidget {
+  const DefaultRoomSideNavigationButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.primary = false,
+    this.trailingIcon = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool primary;
+  final bool trailingIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseBgColor = primary
+        ? const Color(0xFF4F46E5)
+        : const Color(0xFF0F172A);
+    final baseFgColor = Colors.white;
+
+    Color faded(Color color, double opacity) =>
+        color.withValues(alpha: opacity.clamp(0.0, 1.0));
+
+    final buttonChild = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: trailingIcon
+          ? [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(icon, size: 18),
+            ]
+          : [
+              Icon(icon, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+    );
+
+    return OutlinedButton(
+      onPressed: onTap,
+      child: buttonChild,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ).copyWith(
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return faded(baseFgColor, 0.2);
+          }
+          if (states.contains(WidgetState.pressed)) {
+            return baseFgColor;
+          }
+          return faded(baseFgColor, 0.2);
+        }),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return faded(baseBgColor, 0.2);
+          }
+          if (states.contains(WidgetState.pressed)) {
+            return baseBgColor;
+          }
+          return faded(baseBgColor, 0.2);
+        }),
+        side: const WidgetStatePropertyAll(BorderSide.none),
+        elevation: const WidgetStatePropertyAll(0),
+        shadowColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return Colors.black.withValues(alpha: 0.12);
+          }
+          return Colors.transparent;
+        }),
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return Colors.white.withValues(alpha: 0.08);
+          }
+          return Colors.transparent;
+        }),
       ),
     );
   }
@@ -258,18 +338,18 @@ class _MiniActionButton extends StatelessWidget {
     final bgColor = primary
         ? const Color(0xFF4F46E5)
         : selected
-        ? const Color(0xFFE0E7FF)
-        : Colors.white;
+            ? const Color(0xFFE0E7FF)
+            : Colors.white;
     final borderColor = primary
         ? const Color(0xFF4F46E5)
         : selected
-        ? const Color(0xFF818CF8)
-        : const Color(0xFFCBD5E1);
+            ? const Color(0xFF818CF8)
+            : const Color(0xFFCBD5E1);
     final fgColor = primary
         ? Colors.white
         : selected
-        ? const Color(0xFF3730A3)
-        : const Color(0xFF334155);
+            ? const Color(0xFF3730A3)
+            : const Color(0xFF334155);
 
     return SizedBox(
       height: height,
@@ -300,3 +380,4 @@ class _MiniActionButton extends StatelessWidget {
     );
   }
 }
+

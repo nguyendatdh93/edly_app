@@ -218,8 +218,37 @@ class _DefaultRoomHtmlViewState extends State<DefaultRoomHtmlView> {
     }
   </style>
   <script>
+    (function () {
+      try {
+        const storageProbe = window.localStorage;
+        void storageProbe;
+      } catch (_) {
+        const memoryStorage = {
+          getItem: function () { return null; },
+          setItem: function () {},
+          removeItem: function () {},
+          clear: function () {},
+          key: function () { return null; },
+          length: 0
+        };
+
+        Object.defineProperty(window, 'localStorage', {
+          value: memoryStorage,
+          configurable: true,
+        });
+
+        Object.defineProperty(window, 'sessionStorage', {
+          value: memoryStorage,
+          configurable: true,
+        });
+      }
+    })();
+
     window.MathJax = {
-      options: { renderActions: { addMenu: [] } },
+      options: {
+        enableMenu: false,
+        renderActions: { addMenu: [] }
+      },
       chtml: { scale: 1 }
     };
   </script>

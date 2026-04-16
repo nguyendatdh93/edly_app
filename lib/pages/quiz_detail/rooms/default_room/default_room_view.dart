@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/default_room_components.dart';
@@ -312,15 +312,49 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
               )
             else
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                  child: DefaultRoomQuestionCard(
-                    question: question,
-                    questionNumber: _currentIndex + 1,
-                    totalQuestions: _questions.length,
-                    answerState: _answerState,
-                    onChanged: () => setState(() {}),
-                  ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                        child: DefaultRoomQuestionCard(
+                          question: question,
+                          questionNumber: _currentIndex + 1,
+                          totalQuestions: _questions.length,
+                          answerState: _answerState,
+                          onChanged: () => setState(() {}),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 12,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: DefaultRoomSideNavigationButton(
+                          label: 'Trước',
+                          icon: Icons.arrow_back_rounded,
+                          onTap: _currentIndex <= 0 ? null : _goPrevious,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 12,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: DefaultRoomSideNavigationButton(
+                          icon: Icons.arrow_forward_rounded,
+                          label: 'Sau',
+                          onTap: _isSubmitting || _currentIndex >= _questions.length - 1
+                              ? null
+                              : _goNext,
+                          primary: true,
+                          trailingIcon: true,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             Container(

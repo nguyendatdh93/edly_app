@@ -66,39 +66,46 @@ class _SingleChoiceOption extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? const Color(0xFF3B82F6) : Colors.white,
-                border: Border.all(
-                  color: selected
-                      ? const Color(0xFF3B82F6)
-                      : const Color(0xFFD1D5DB),
-                ),
-              ),
-              child: Text(
-                prefix,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color: selected ? Colors.white : const Color(0xFF4B5563),
+            SizedBox(
+              width: 40,
+              child: Center(
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? const Color(0xFF3B82F6) : Colors.white,
+                    border: Border.all(
+                      color: selected
+                          ? const Color(0xFF3B82F6)
+                          : const Color(0xFFD1D5DB),
+                    ),
+                  ),
+                  child: Text(
+                    prefix,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      color: selected ? Colors.white : const Color(0xFF4B5563),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: DefaultRoomHtmlView(
-                  html: content,
-                  fontSize: 10,
-                  minHeight: 28,
-                  maxAutoHeight: 320,
+              child: Center(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DefaultRoomHtmlView(
+                    html: content,
+                    fontSize: 10,
+                    minHeight: 28,
+                    maxAutoHeight: 320,
+                  ),
                 ),
               ),
             ),

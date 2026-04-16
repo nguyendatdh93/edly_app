@@ -1,4 +1,4 @@
-import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
+﻿import 'package:edupen/pages/quiz_detail/quiz_detail_models.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/type/comprehension.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/type/drag_drop.dart';
 import 'package:edupen/pages/quiz_detail/rooms/default_room/type/essay.dart';
@@ -84,14 +84,21 @@ class DefaultRoomQuestionCard extends StatelessWidget {
       children: [
         Expanded(
           flex: 11,
-          child: _SplitPanel( 
+          child: _SplitPanel(
             child: _buildQuestionHtmlPane(questionHtml),
           ),
         ),
-        const SizedBox(width: 10),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: Color(0xFFE2E8F0),
+          ),
+        ),
         Expanded(
           flex: 12,
-          child: _SplitPanel( 
+          child: _SplitPanel(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: isComprehensionWithChildren
@@ -199,7 +206,7 @@ class DefaultRoomQuestionCard extends StatelessWidget {
             html: childHtml.trim().isNotEmpty
                 ? childHtml
                 : '<p>[Không có nội dung]</p>',
-            fontSize: 15,
+            fontSize: 10,
             minHeight: 24,
             maxAutoHeight: 260,
           ),
@@ -331,20 +338,15 @@ class _SplitPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 6),
           Expanded(child: child),
         ],
       ),
     );
   }
 }
+
