@@ -6,6 +6,7 @@ import 'package:edly/pages/teacher/teacher_course_library_view.dart';
 import 'package:edly/pages/teacher/teacher_models.dart';
 import 'package:edly/pages/teacher/teacher_repository.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 
 class TeacherView extends StatefulWidget {
@@ -48,7 +49,12 @@ class _TeacherViewState extends State<TeacherView> {
 
   Future<void> _openQuiz(TeacherQuizItem item) async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => QuizDetailView(quizId: item.id)),
+      MaterialPageRoute<void>(
+        builder: (_) => QuizDetailView(
+          quizId: item.id,
+          currentTab: LearningDockTab.teacher,
+        ),
+      ),
     );
   }
 
@@ -128,6 +134,9 @@ class _TeacherViewState extends State<TeacherView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomePalette.background,
+      bottomNavigationBar: const LearningDockBar(
+        currentTab: LearningDockTab.teacher,
+      ),
       body: SafeArea(
         child: FutureBuilder<TeacherDashboardData>(
           future: _future,

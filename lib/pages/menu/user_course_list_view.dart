@@ -3,6 +3,7 @@ import 'package:edly/pages/course_detail/course_detail_view.dart';
 import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/home/home_models.dart';
 import 'package:edly/pages/home/home_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 
 enum UserCourseListMode { purchased, progress }
@@ -24,9 +25,14 @@ extension UserCourseListModeText on UserCourseListMode {
 }
 
 class UserCourseListView extends StatefulWidget {
-  const UserCourseListView({super.key, required this.mode});
+  const UserCourseListView({
+    super.key,
+    required this.mode,
+    this.currentTab = LearningDockTab.purchasedCourses,
+  });
 
   final UserCourseListMode mode;
+  final LearningDockTab currentTab;
 
   @override
   State<UserCourseListView> createState() => _UserCourseListViewState();
@@ -34,11 +40,20 @@ class UserCourseListView extends StatefulWidget {
 
 class _UserCourseListViewState extends State<UserCourseListView> {
   late Future<HomeDashboardData> _future;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _future = HomeRepository.instance.fetchDashboard();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _reload() async {
@@ -56,7 +71,31 @@ class _UserCourseListViewState extends State<UserCourseListView> {
       courses.sort((a, b) => (b.progress ?? 0).compareTo(a.progress ?? 0));
     }
 
-    return courses;
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return courses;
+    }
+
+    return courses.where((course) {
+      final title = course.title.toLowerCase();
+      final category = (course.category ?? '').toLowerCase();
+      final description = course.shortDescription.toLowerCase();
+      return title.contains(query) ||
+          category.contains(query) ||
+          description.contains(query);
+    }).toList(growable: false);
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      if (_isSearching) {
+        _isSearching = false;
+        _searchQuery = '';
+        _searchController.clear();
+      } else {
+        _isSearching = true;
+      }
+    });
   }
 
   Future<void> _openCourse(HomeCourseItem course, int index) async {
@@ -74,6 +113,7 @@ class _UserCourseListViewState extends State<UserCourseListView> {
           gradient: visual.gradient,
           accentColor: visual.accentColor,
           sourceLabel: widget.mode.title,
+          currentDockTab: widget.currentTab,
           relatedCourses: courses,
         ),
       ),
@@ -86,13 +126,78 @@ class _UserCourseListViewState extends State<UserCourseListView> {
 
   @override
   Widget build(BuildContext context) {
+    final hintText = widget.mode == UserCourseListMode.purchased
+        ? 'Tìm khóa học đã mua'
+        : 'Tìm khóa học đang học';
+
     return Scaffold(
       backgroundColor: HomePalette.background,
+      bottomNavigationBar: LearningDockBar(currentTab: widget.currentTab),
       appBar: AppBar(
-        title: Text(widget.mode.title),
+        titleSpacing: 20,
+        title: _isSearching
+            ? Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: HomePalette.textMuted,
+                    ),
+                    hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: HomePalette.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: HomePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+            : Text(
+                widget.mode.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: HomePalette.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
         centerTitle: false,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              onPressed: _toggleSearch,
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFFF3F4F6),
+                foregroundColor: HomePalette.textPrimary,
+              ),
+              icon: Icon(
+                _isSearching ? Icons.close_rounded : Icons.search_rounded,
+              ),
+            ),
+          ),
+        ],
       ),
       body: FutureBuilder<HomeDashboardData>(
         future: _future,
@@ -119,24 +224,53 @@ class _UserCourseListViewState extends State<UserCourseListView> {
           );
 
           if (courses.isEmpty) {
-            return _CourseListEmpty(message: widget.mode.emptyMessage);
+            return _CourseListEmpty(
+              message: _searchQuery.trim().isNotEmpty
+                  ? 'Không tìm thấy khóa học phù hợp.'
+                  : widget.mode.emptyMessage,
+              showClearAction: _searchQuery.trim().isNotEmpty,
+              onClear: _searchQuery.trim().isNotEmpty
+                  ? () {
+                      setState(() {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      });
+                    }
+                  : null,
+            );
           }
 
           return RefreshIndicator(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-              itemCount: courses.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final course = courses[index];
-                return _UserCourseTile(
-                  course: course,
-                  visual: _courseVisualAt(index),
-                  showProgress: widget.mode == UserCourseListMode.progress,
-                  onTap: () => _openCourse(course, index),
-                );
-              },
+              children: [
+                if (_searchQuery.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      '${courses.length} kết quả cho "${_searchQuery.trim()}"',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: HomePalette.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ...List.generate(courses.length, (index) {
+                  final course = courses[index];
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index == courses.length - 1 ? 0 : 12,
+                    ),
+                    child: _UserCourseTile(
+                      course: course,
+                      visual: _courseVisualAt(index),
+                      showProgress: widget.mode == UserCourseListMode.progress,
+                      onTap: () => _openCourse(course, index),
+                    ),
+                  );
+                }),
+              ],
             ),
           );
         },
@@ -191,14 +325,23 @@ class _UserCourseTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      course.category ?? 'Gói học',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: visual.accentColor,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            course.category ?? 'Gói học',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: visual.accentColor,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _UserCourseStatusBadge(showProgress: showProgress),
+                      ],
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -311,22 +454,80 @@ class _CourseCoverFallback extends StatelessWidget {
 }
 
 class _CourseListEmpty extends StatelessWidget {
-  const _CourseListEmpty({required this.message});
+  const _CourseListEmpty({
+    required this.message,
+    this.showClearAction = false,
+    this.onClear,
+  });
 
   final String message;
+  final bool showClearAction;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: HomePalette.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              showClearAction
+                  ? Icons.search_off_rounded
+                  : Icons.menu_book_outlined,
+              size: 42,
+              color: HomePalette.textMuted,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: HomePalette.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (showClearAction && onClear != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: onClear,
+                icon: const Icon(Icons.close_rounded),
+                label: const Text('Xóa tìm kiếm'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UserCourseStatusBadge extends StatelessWidget {
+  const _UserCourseStatusBadge({required this.showProgress});
+
+  final bool showProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = showProgress
+        ? const Color(0xFFECFDF5)
+        : const Color(0xFFEFF6FF);
+    final foregroundColor = showProgress
+        ? const Color(0xFF15803D)
+        : const Color(0xFF1D4ED8);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        showProgress ? 'Đang học' : 'Đã mua',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: foregroundColor,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

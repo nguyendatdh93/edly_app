@@ -741,7 +741,7 @@ class _QuizRoomViewState extends State<QuizRoomView> {
     final footerVerticalPadding = compact ? 0.0 : 2.0;
     final footerHorizontalPadding = compact ? 4.0 : 6.0;
     final questionBoardLabel = compact
-        ? 'Q $questionIndexLabel/${questions.length}'
+        ? 'Question $questionIndexLabel/${questions.length}'
         : 'Question $questionIndexLabel of ${questions.length}';
     final isOnBreak = _breakRemainingSeconds != null;
 
@@ -902,314 +902,321 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                             questions: questions,
                             compact: compact,
                           )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  margin: EdgeInsets.fromLTRB(
-                                    compact ? 6 : 12,
-                                    panelMarginVertical,
-                                    compact ? 2 : 4,
-                                    panelMarginVertical,
-                                  ),
-                                  padding: EdgeInsets.all(panelPadding),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: QuizDetailPalette.border,
+                        : Container(
+                            margin: EdgeInsets.fromLTRB(
+                              compact ? 0 : 6,
+                              panelMarginVertical,
+                              compact ? 0 : 6,
+                              panelMarginVertical,
+                            ),
+                            padding: EdgeInsets.all(panelPadding),
+                            decoration: BoxDecoration(color: Colors.white),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: compact ? 4 : 6,
                                     ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          padding: const EdgeInsets.only(
-                                            right: 10,
-                                          ),
-                                          child: _buildQuestionContent(
-                                            question: question,
-                                            raw: question.content.isNotEmpty
-                                                ? question.content
-                                                : question.title,
-                                            style: TextStyle(
-                                              color:
-                                                  QuizDetailPalette.textPrimary,
-                                              fontSize: contentFontSize,
-                                              height: 1.5,
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: SingleChildScrollView(
+                                            padding: const EdgeInsets.only(
+                                              right: 10,
+                                            ),
+                                            child: _buildQuestionContent(
+                                              question: question,
+                                              raw: question.content.isNotEmpty
+                                                  ? question.content
+                                                  : question.title,
+                                              style: TextStyle(
+                                                color: QuizDetailPalette
+                                                    .textPrimary,
+                                                fontSize: contentFontSize,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  margin: EdgeInsets.fromLTRB(
-                                    compact ? 2 : 4,
-                                    panelMarginVertical,
-                                    compact ? 6 : 12,
-                                    panelMarginVertical,
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: compact ? 4 : 6,
                                   ),
-                                  padding: EdgeInsets.all(panelPadding),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
+                                  child: Container(
+                                    width: 1,
+                                    decoration: BoxDecoration(
                                       color: QuizDetailPalette.border,
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: compact ? 6 : 10,
-                                          vertical: compact ? 2 : 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      left: compact ? 4 : 6,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: compact ? 6 : 10,
+                                            vertical: compact ? 2 : 4,
                                           ),
-                                          border: Border.all(
-                                            color: QuizDetailPalette.border,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            border: Border.all(
+                                              color: QuizDetailPalette.border,
+                                            ),
                                           ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              constraints: BoxConstraints(
-                                                minWidth: questionTagSize,
-                                                minHeight: questionTagSize,
-                                              ),
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: compact ? 4 : 6,
-                                              ),
-                                              alignment: Alignment.center,
-                                              decoration: BoxDecoration(
-                                                color: Colors.black,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '$questionIndexLabel',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: compact ? 10 : 12,
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                constraints: BoxConstraints(
+                                                  minWidth: questionTagSize,
+                                                  minHeight: questionTagSize,
                                                 ),
-                                              ),
-                                            ),
-                                            SizedBox(width: compact ? 6 : 10),
-                                            Expanded(
-                                              child: Text(
-                                                'Mark for Review',
-                                                style: TextStyle(
-                                                  color: QuizDetailPalette
-                                                      .textPrimary,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: compact ? 8 : 10,
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: compact ? 4 : 6,
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () =>
-                                                  _toggleMarkForReview(
-                                                    question,
+                                                alignment: Alignment.center,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  '$questionIndexLabel',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: compact ? 10 : 12,
                                                   ),
-                                              constraints: const BoxConstraints(
-                                                minWidth: 28,
-                                                minHeight: 28,
+                                                ),
                                               ),
-                                              padding: EdgeInsets.zero,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              iconSize: compact ? 14 : 16,
-                                              icon: Icon(
-                                                _markedForReview[question.id] ==
-                                                        true
-                                                    ? Icons.bookmark_rounded
-                                                    : Icons
-                                                          .bookmark_border_rounded,
-                                                color:
-                                                    _markedForReview[question
-                                                            .id] ==
-                                                        true
-                                                    ? Colors.redAccent
-                                                    : QuizDetailPalette
-                                                          .textSecondary,
+                                              SizedBox(width: compact ? 6 : 10),
+                                              Expanded(
+                                                child: Text(
+                                                  'Mark for Review',
+                                                  style: TextStyle(
+                                                    color: QuizDetailPalette
+                                                        .textPrimary,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: compact ? 10 : 12,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                              IconButton(
+                                                onPressed: () =>
+                                                    _toggleMarkForReview(
+                                                      question,
+                                                    ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 28,
+                                                      minHeight: 28,
+                                                    ),
+                                                padding: EdgeInsets.zero,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                iconSize: compact ? 16 : 18,
+                                                icon: Icon(
+                                                  _markedForReview[question
+                                                              .id] ==
+                                                          true
+                                                      ? Icons.bookmark_rounded
+                                                      : Icons
+                                                            .bookmark_border_rounded,
+                                                  color:
+                                                      _markedForReview[question
+                                                              .id] ==
+                                                          true
+                                                      ? Colors.redAccent
+                                                      : QuizDetailPalette
+                                                            .textSecondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: compact ? 6 : 8),
-                                      Expanded(
-                                        child: _isChoiceQuestion(question)
-                                            ? ListView.separated(
-                                                itemCount:
-                                                    question.options.length,
-                                                separatorBuilder:
-                                                    (context, index) =>
-                                                        SizedBox(
-                                                          height: compact
-                                                              ? 6
-                                                              : 10,
-                                                        ),
-                                                itemBuilder: (context, index) {
-                                                  final option =
-                                                      question.options[index];
-                                                  final selected =
-                                                      _selectedOptions[question
-                                                          .id] ==
-                                                      option.id;
-                                                  final checked =
-                                                      _exerciseChecked[question
-                                                          .id] ==
-                                                      true;
-                                                  final showExerciseCheckState =
-                                                      !widget.room.isExam &&
-                                                      checked;
-                                                  final optionColorState =
-                                                      _optionStateForExercise(
-                                                        showExerciseCheckState:
-                                                            showExerciseCheckState,
-                                                        option: option,
-                                                        selected: selected,
-                                                      );
-                                                  return InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        _selectedOptions[question
-                                                                .id] =
-                                                            option.id;
-                                                        _exerciseChecked[question
-                                                                .id] =
-                                                            false;
-                                                      });
-                                                    },
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal: compact
-                                                                ? 8
-                                                                : 12,
-                                                            vertical: compact
-                                                                ? 8
-                                                                : 12,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: optionColorState
-                                                            .backgroundColor,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
-                                                        border: Border.all(
-                                                          color:
-                                                              optionColorState
-                                                                  .borderColor,
-                                                          width: selected
-                                                              ? 2
-                                                              : 1.5,
-                                                        ),
-                                                      ),
-                                                      child: Row(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Container(
-                                                            width:
-                                                                optionCircleSize,
-                                                            height:
-                                                                optionCircleSize,
-                                                            alignment: Alignment
-                                                                .center,
-                                                            decoration: BoxDecoration(
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                              border: Border.all(
-                                                                color: optionColorState
-                                                                    .borderColor,
-                                                              ),
-                                                            ),
-                                                            child: Text(
-                                                              String.fromCharCode(
-                                                                65 + index,
-                                                              ),
-                                                              style: TextStyle(
-                                                                color: optionColorState
-                                                                    .textColor,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                          ),
+                                        SizedBox(height: compact ? 6 : 8),
+                                        Expanded(
+                                          child: _isChoiceQuestion(question)
+                                              ? ListView.separated(
+                                                  itemCount:
+                                                      question.options.length,
+                                                  separatorBuilder:
+                                                      (context, index) =>
                                                           SizedBox(
-                                                            width: compact
-                                                                ? 8
+                                                            height: compact
+                                                                ? 6
                                                                 : 10,
                                                           ),
-                                                          Expanded(
-                                                            child: _buildQuestionContent(
-                                                              question:
-                                                                  question,
-                                                              raw: option
-                                                                  .content,
-                                                              option: option,
-                                                              style: TextStyle(
-                                                                color: optionColorState
-                                                                    .contentColor,
-                                                                fontSize:
-                                                                    optionFontSize,
-                                                                height: 1.35,
+                                                  itemBuilder: (context, index) {
+                                                    final option =
+                                                        question.options[index];
+                                                    final selected =
+                                                        _selectedOptions[question
+                                                            .id] ==
+                                                        option.id;
+                                                    final checked =
+                                                        _exerciseChecked[question
+                                                            .id] ==
+                                                        true;
+                                                    final showExerciseCheckState =
+                                                        !widget.room.isExam &&
+                                                        checked;
+                                                    final optionColorState =
+                                                        _optionStateForExercise(
+                                                          showExerciseCheckState:
+                                                              showExerciseCheckState,
+                                                          option: option,
+                                                          selected: selected,
+                                                        );
+                                                    return InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          _selectedOptions[question
+                                                                  .id] =
+                                                              option.id;
+                                                          _exerciseChecked[question
+                                                                  .id] =
+                                                              false;
+                                                        });
+                                                      },
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      child: Container(
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  compact
+                                                                  ? 8
+                                                                  : 12,
+                                                              vertical: compact
+                                                                  ? 8
+                                                                  : 12,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: optionColorState
+                                                              .backgroundColor,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                optionColorState
+                                                                    .borderColor,
+                                                            width: selected
+                                                                ? 2
+                                                                : 1.5,
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Container(
+                                                              width:
+                                                                  optionCircleSize,
+                                                              height:
+                                                                  optionCircleSize,
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              decoration: BoxDecoration(
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                border: Border.all(
+                                                                  color: optionColorState
+                                                                      .borderColor,
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                String.fromCharCode(
+                                                                  65 + index,
+                                                                ),
+                                                                style: TextStyle(
+                                                                  color: optionColorState
+                                                                      .textColor,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
-                                                        ],
+                                                            SizedBox(
+                                                              width: compact
+                                                                  ? 8
+                                                                  : 10,
+                                                            ),
+                                                            Expanded(
+                                                              child: _buildQuestionContent(
+                                                                question:
+                                                                    question,
+                                                                raw: option
+                                                                    .content,
+                                                                option: option,
+                                                                style: TextStyle(
+                                                                  color: optionColorState
+                                                                      .contentColor,
+                                                                  fontSize:
+                                                                      optionFontSize,
+                                                                  height: 1.35,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                    ),
-                                                  );
-                                                },
-                                              )
-                                            : TextFormField(
-                                                key: ValueKey<String>(
-                                                  'text_${question.id}',
+                                                    );
+                                                  },
+                                                )
+                                              : TextFormField(
+                                                  key: ValueKey<String>(
+                                                    'text_${question.id}',
+                                                  ),
+                                                  initialValue:
+                                                      _textAnswers[question
+                                                          .id] ??
+                                                      '',
+                                                  maxLines: 6,
+                                                  decoration: const InputDecoration(
+                                                    hintText:
+                                                        'Nhập câu trả lời của bạn',
+                                                    border:
+                                                        OutlineInputBorder(),
+                                                  ),
+                                                  onTapOutside: (_) =>
+                                                      _dismissKeyboard(),
+                                                  textInputAction:
+                                                      TextInputAction.done,
+                                                  onChanged: (value) {
+                                                    _textAnswers[question.id] =
+                                                        value;
+                                                  },
                                                 ),
-                                                initialValue:
-                                                    _textAnswers[question.id] ??
-                                                    '',
-                                                maxLines: 6,
-                                                decoration: const InputDecoration(
-                                                  hintText:
-                                                      'Nhập câu trả lời của bạn',
-                                                  border: OutlineInputBorder(),
-                                                ),
-                                                onTapOutside: (_) =>
-                                                    _dismissKeyboard(),
-                                                textInputAction:
-                                                    TextInputAction.done,
-                                                onChanged: (value) {
-                                                  _textAnswers[question.id] =
-                                                      value;
-                                                },
-                                              ),
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                   ),
                   Container(
@@ -1221,39 +1228,45 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                     child: Row(
                       children: [
                         Expanded(
-                          flex: 2,
-                          child: Row(
-                            children: [
-                              Image.asset(
-                                'assets/images/edly-logo.png',
-                                height: compact ? 22 : 28,
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 1,
-                                height: compact ? 18 : 22,
-                                color: Colors.black26,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  (username?.isNotEmpty == true)
-                                      ? username!
-                                      : 'Edly',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: compact ? 12 : 14,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/images/edly-logo.png',
+                                  height: compact ? 22 : 28,
+                                  fit: BoxFit.contain,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 1,
+                                  height: compact ? 18 : 22,
+                                  color: Colors.black26,
+                                ),
+                                const SizedBox(width: 8),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width * 0.2,
+                                  ),
+                                  child: Text(
+                                    (username?.isNotEmpty == true)
+                                        ? username!
+                                        : 'Edly',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: compact ? 12 : 14,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                         Expanded(
-                          flex: 2,
                           child: Align(
                             alignment: Alignment.center,
                             child: _showModuleReview
@@ -1285,7 +1298,6 @@ class _QuizRoomViewState extends State<QuizRoomView> {
                           ),
                         ),
                         Expanded(
-                          flex: 3,
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: Row(
@@ -1433,9 +1445,9 @@ class _QuizRoomViewState extends State<QuizRoomView> {
         );
       }
       return const _OptionColorState(
-        backgroundColor: Colors.white,
-        borderColor: Color(0xFF4B4B4B),
-        textColor: Color(0xFF4B4B4B),
+        backgroundColor: Color(0xFFF8FAFC),
+        borderColor: Color(0xFFCBD5E1),
+        textColor: Color(0xFF334155),
         contentColor: QuizDetailPalette.textPrimary,
       );
     }
@@ -3485,147 +3497,23 @@ class _ExamLoadingScreenState extends State<_ExamLoadingScreen>
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
-            final t = _controller.value * math.pi * 2;
-            final tiltX = math.sin(t) * 0.28;
-            final tiltY = math.cos(t * 0.85) * 0.34;
-            final ringRotation = _controller.value * math.pi * 2;
-            final glowScale = 1 + (math.sin(t * 1.4) * 0.045);
-
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
                   width: 280,
                   height: 280,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Transform.scale(
-                        scale: glowScale,
-                        child: Container(
-                          width: 210,
-                          height: 210,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                const Color(0xFF7768FF).withValues(alpha: 0.24),
-                                const Color(0xFF7768FF).withValues(alpha: 0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Transform.rotate(
-                        angle: ringRotation,
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) {
+                      return Transform.rotate(
+                        angle: _controller.value * math.pi * 2,
                         child: CustomPaint(
-                          size: const Size(220, 220),
-                          painter: const _OrbitRingPainter(
-                            primary: Color(0xFF4F1BDB),
-                            secondary: Color(0xFF6D7BFF),
-                            accent: Color(0xFFFFA345),
-                          ),
+                          size: const Size(280, 280),
+                          painter: const _PencilSpinnerPainter(),
                         ),
-                      ),
-                      Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()
-                          ..setEntry(3, 2, 0.0016)
-                          ..rotateX(tiltX)
-                          ..rotateY(tiltY),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 154,
-                              height: 154,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF755BFF),
-                                    Color(0xFF4F1BDB),
-                                    Color(0xFF32139F),
-                                  ],
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x4032149F),
-                                    blurRadius: 34,
-                                    offset: Offset(0, 22),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Positioned(
-                              top: 20,
-                              left: 34,
-                              right: 34,
-                              child: Container(
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.68),
-                                      Colors.white.withValues(alpha: 0.06),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 116,
-                              height: 116,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF3D17CF),
-                                    Color(0xFF2A0D86),
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.18),
-                                ),
-                              ),
-                            ),
-                            Transform.rotate(
-                              angle: ringRotation * -1.4,
-                              child: const Icon(
-                                Icons.edit_rounded,
-                                size: 52,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 40,
-                        child: Transform.scale(
-                          scaleX: 1.15 + (math.sin(t) * 0.06),
-                          scaleY: 1.0,
-                          child: Container(
-                            width: 156,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.18),
-                                  Colors.black.withValues(alpha: 0),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -3654,84 +3542,185 @@ class _ExamLoadingScreenState extends State<_ExamLoadingScreen>
   }
 }
 
-class _OrbitRingPainter extends CustomPainter {
-  const _OrbitRingPainter({
-    required this.primary,
-    required this.secondary,
-    required this.accent,
-  });
-
-  final Color primary;
-  final Color secondary;
-  final Color accent;
+class _PencilSpinnerPainter extends CustomPainter {
+  const _PencilSpinnerPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final mainRect = Rect.fromCircle(center: center, radius: 82);
-    final outerRect = Rect.fromCircle(center: center, radius: 98);
-    final innerRect = Rect.fromCircle(center: center, radius: 66);
+    const bodyRadius = 76.0;
+    const bodyWidth = 24.0;
+    const startAngle = math.pi * 0.82;
+    const sweepAngle = math.pi * 1.58;
+    final bodyRect = Rect.fromCircle(center: center, radius: bodyRadius);
 
-    _drawArc(
-      canvas,
-      rect: mainRect,
-      strokeWidth: 28,
-      startAngle: -2.5,
-      sweep: 3.55,
-      color: primary,
-    );
-    _drawArc(
-      canvas,
-      rect: outerRect,
-      strokeWidth: 9,
-      startAngle: -2.35,
-      sweep: 4.45,
-      color: secondary,
-    );
-    _drawArc(
-      canvas,
-      rect: innerRect,
-      strokeWidth: 9,
-      startAngle: -1.9,
-      sweep: 3.15,
-      color: const Color(0xFF3D17CF),
+    final shadowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = bodyWidth + 4
+      ..strokeCap = StrokeCap.butt
+      ..color = const Color(0x14000000);
+    canvas.drawArc(
+      bodyRect.shift(const Offset(0, 5)),
+      startAngle,
+      sweepAngle,
+      false,
+      shadowPaint,
     );
 
-    _drawArc(
-      canvas,
-      rect: Rect.fromCircle(center: center, radius: 104),
-      strokeWidth: 3,
-      startAngle: -0.12,
-      sweep: 1.1,
-      color: const Color(0xFF1E1E1E),
+    final bodyPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = bodyWidth
+      ..strokeCap = StrokeCap.butt
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF3B7BFF), Color(0xFF1F57E7), Color(0xFF123FBC)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(bodyRect);
+    canvas.drawArc(bodyRect, startAngle, sweepAngle, false, bodyPaint);
+
+    final highlightPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0x55FFFFFF);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: bodyRadius - 3),
+      startAngle + 0.1,
+      sweepAngle * 0.62,
+      false,
+      highlightPaint,
     );
-    _drawArc(
+
+    final stripePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.butt
+      ..color = const Color(0x18000000);
+    for (final offset in [0.24, 0.48, 0.72]) {
+      canvas.drawArc(
+        bodyRect,
+        startAngle + sweepAngle * offset,
+        0.08,
+        false,
+        stripePaint..strokeWidth = bodyWidth,
+      );
+    }
+
+    final tipPoint = _pointOnCircle(center, bodyRadius, startAngle);
+    final eraserPoint = _pointOnCircle(center, bodyRadius, startAngle + sweepAngle);
+    final tipAxis = _arcTangent(startAngle) * -1;
+    final eraserAxis = _arcTangent(startAngle + sweepAngle);
+
+    _drawCurvedTip(
       canvas,
-      rect: outerRect,
-      strokeWidth: 8,
-      startAngle: 0.78,
-      sweep: 0.28,
-      color: accent,
+      anchor: tipPoint,
+      axis: tipAxis,
+      halfWidth: bodyWidth / 2,
+    );
+    _drawCurvedEraser(
+      canvas,
+      anchor: eraserPoint,
+      axis: eraserAxis,
+      halfWidth: bodyWidth / 2,
     );
   }
 
-  void _drawArc(
-    Canvas canvas, {
-    required Rect rect,
-    required double strokeWidth,
-    required double sweep,
-    required Color color,
-    required double startAngle,
-  }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+  Offset _pointOnCircle(Offset center, double radius, double angle) {
+    return Offset(
+      center.dx + radius * math.cos(angle),
+      center.dy + radius * math.sin(angle),
+    );
+  }
 
-    canvas.drawArc(rect, startAngle, sweep, false, paint);
+  Offset _arcTangent(double angle) {
+    return Offset(-math.sin(angle), math.cos(angle));
+  }
+
+  void _drawCurvedTip(
+    Canvas canvas, {
+    required Offset anchor,
+    required Offset axis,
+    required double halfWidth,
+  }) {
+    final normal = Offset(-axis.dy, axis.dx);
+    final borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = const Color(0x22000000);
+
+    final joinFront = anchor;
+    final joinBack = anchor - axis * 8;
+    final woodTip = joinBack + axis * 18;
+    final graphiteTip = woodTip + axis * 9;
+
+    final joinPath = Path()
+      ..moveTo((joinBack + normal * halfWidth).dx, (joinBack + normal * halfWidth).dy)
+      ..lineTo((joinFront + normal * (halfWidth * 0.78)).dx, (joinFront + normal * (halfWidth * 0.78)).dy)
+      ..lineTo((joinFront - normal * (halfWidth * 0.78)).dx, (joinFront - normal * (halfWidth * 0.78)).dy)
+      ..lineTo((joinBack - normal * halfWidth).dx, (joinBack - normal * halfWidth).dy)
+      ..close();
+    canvas.drawPath(joinPath, Paint()..color = const Color(0xFF1F57E7));
+
+    final woodPath = Path()
+      ..moveTo((joinFront + normal * (halfWidth * 0.78)).dx, (joinFront + normal * (halfWidth * 0.78)).dy)
+      ..lineTo(woodTip.dx, woodTip.dy)
+      ..lineTo((joinFront - normal * (halfWidth * 0.78)).dx, (joinFront - normal * (halfWidth * 0.78)).dy)
+      ..close();
+    canvas.drawPath(woodPath, Paint()..color = const Color(0xFFFFC067));
+    canvas.drawPath(woodPath, borderPaint);
+
+    final graphitePath = Path()
+      ..moveTo(graphiteTip.dx, graphiteTip.dy)
+      ..lineTo((woodTip + normal * 3.6).dx, (woodTip + normal * 3.6).dy)
+      ..lineTo((woodTip - normal * 3.6).dx, (woodTip - normal * 3.6).dy)
+      ..close();
+    canvas.drawPath(graphitePath, Paint()..color = const Color(0xFF1E1E1E));
+  }
+
+  void _drawCurvedEraser(
+    Canvas canvas, {
+    required Offset anchor,
+    required Offset axis,
+    required double halfWidth,
+  }) {
+    final normal = Offset(-axis.dy, axis.dx);
+    final borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = const Color(0x22000000);
+
+    final ferruleStart = anchor - axis * 1.5;
+    final ferruleEnd = ferruleStart + axis * 15;
+    final eraserEnd = ferruleEnd + axis * 14;
+
+    final ferrulePath = Path()
+      ..moveTo((ferruleStart + normal * halfWidth).dx, (ferruleStart + normal * halfWidth).dy)
+      ..lineTo((ferruleEnd + normal * halfWidth).dx, (ferruleEnd + normal * halfWidth).dy)
+      ..lineTo((ferruleEnd - normal * halfWidth).dx, (ferruleEnd - normal * halfWidth).dy)
+      ..lineTo((ferruleStart - normal * halfWidth).dx, (ferruleStart - normal * halfWidth).dy)
+      ..close();
+    canvas.drawPath(ferrulePath, Paint()..color = const Color(0xFFC9CDD6));
+    canvas.drawPath(ferrulePath, borderPaint);
+
+    final stripePaint = Paint()
+      ..color = const Color(0xFF9EA4B0)
+      ..strokeWidth = 1.4;
+    for (final t in [0.25, 0.5, 0.75]) {
+      final p = ferruleStart + axis * (15 * t);
+      canvas.drawLine(p + normal * halfWidth, p - normal * halfWidth, stripePaint);
+    }
+
+    final eraserHalf = halfWidth * 0.88;
+    final eraserPath = Path()
+      ..moveTo((ferruleEnd + normal * eraserHalf).dx, (ferruleEnd + normal * eraserHalf).dy)
+      ..lineTo((eraserEnd + normal * eraserHalf).dx, (eraserEnd + normal * eraserHalf).dy)
+      ..lineTo((eraserEnd - normal * eraserHalf).dx, (eraserEnd - normal * eraserHalf).dy)
+      ..lineTo((ferruleEnd - normal * eraserHalf).dx, (ferruleEnd - normal * eraserHalf).dy)
+      ..close();
+    canvas.drawPath(eraserPath, Paint()..color = const Color(0xFFF3EEF4));
+    canvas.drawPath(eraserPath, borderPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _OrbitRingPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

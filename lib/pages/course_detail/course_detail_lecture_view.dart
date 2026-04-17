@@ -10,6 +10,7 @@ import 'package:edly/pages/course_detail/course_detail_models.dart';
 import 'package:edly/pages/course_detail/course_detail_repository.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfx/pdfx.dart';
@@ -23,12 +24,14 @@ class CourseDetailLectureView extends StatefulWidget {
     required this.courseSlug,
     required this.courseTitle,
     required this.sections,
+    this.currentDockTab = LearningDockTab.home,
   });
 
   final CourseDetailLearningItem initialItem;
   final String courseSlug;
   final String courseTitle;
   final List<CourseDetailSection> sections;
+  final LearningDockTab currentDockTab;
 
   @override
   State<CourseDetailLectureView> createState() =>
@@ -872,7 +875,10 @@ class _CourseDetailLectureViewState extends State<CourseDetailLectureView>
     if (item.isQuiz) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => QuizDetailView(quizId: item.id),
+          builder: (_) => QuizDetailView(
+            quizId: item.id,
+            currentTab: widget.currentDockTab,
+          ),
         ),
       );
       return;

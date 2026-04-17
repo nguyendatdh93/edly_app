@@ -5,14 +5,20 @@ import 'package:edly/pages/quiz_detail/quiz_detail_models.dart';
 import 'package:edly/pages/quiz_detail/quiz_detail_repository.dart';
 import 'package:edly/pages/quiz_detail/quiz_room_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:edly/widgets/mobile_payment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class QuizDetailView extends StatefulWidget {
-  const QuizDetailView({super.key, required this.quizId});
+  const QuizDetailView({
+    super.key,
+    required this.quizId,
+    this.currentTab = LearningDockTab.home,
+  });
 
   final String quizId;
+  final LearningDockTab currentTab;
 
   @override
   State<QuizDetailView> createState() => _QuizDetailViewState();
@@ -148,6 +154,7 @@ class _QuizDetailViewState extends State<QuizDetailView> {
 
         return Scaffold(
           backgroundColor: QuizDetailPalette.background,
+          bottomNavigationBar: LearningDockBar(currentTab: widget.currentTab),
           appBar: AppBar(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,

@@ -4,6 +4,7 @@ import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/home/home_models.dart';
 import 'package:edly/pages/teacher/teacher_models.dart';
 import 'package:edly/pages/teacher/teacher_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -51,6 +52,7 @@ class _TeacherCourseLibraryViewState extends State<TeacherCourseLibraryView> {
           gradient: const [Color(0xFFE8F0FF), Color(0xFFD8E6FF)],
           accentColor: HomePalette.primary,
           sourceLabel: 'Kho tài liệu',
+          currentDockTab: LearningDockTab.teacher,
         ),
       ),
     );
@@ -60,6 +62,9 @@ class _TeacherCourseLibraryViewState extends State<TeacherCourseLibraryView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomePalette.background,
+      bottomNavigationBar: const LearningDockBar(
+        currentTab: LearningDockTab.teacher,
+      ),
       appBar: AppBar(
         title: const Text('Kho tài liệu'),
         centerTitle: false,

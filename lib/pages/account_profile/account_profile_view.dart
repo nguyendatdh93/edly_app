@@ -4,6 +4,7 @@ import 'package:edly/models/account_profile.dart';
 import 'package:edly/pages/home/home_view.dart';
 import 'package:edly/pages/menu/user_course_list_view.dart';
 import 'package:edly/services/auth_repository.dart';
+import 'package:edly/widgets/learning_dock_bar.dart';
 import 'package:flutter/material.dart';
 
 class AccountProfileView extends StatefulWidget {
@@ -297,7 +298,10 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
-              const UserCourseListView(mode: UserCourseListMode.purchased),
+              const UserCourseListView(
+                mode: UserCourseListMode.purchased,
+                currentTab: LearningDockTab.account,
+              ),
         ),
       );
       return;
@@ -307,7 +311,10 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
-              const UserCourseListView(mode: UserCourseListMode.progress),
+              const UserCourseListView(
+                mode: UserCourseListMode.progress,
+                currentTab: LearningDockTab.account,
+              ),
         ),
       );
       return;
@@ -343,6 +350,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       canPop: !widget.isOnboarding,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FB),
+        bottomNavigationBar: widget.isOnboarding
+            ? null
+            : const LearningDockBar(currentTab: LearningDockTab.account),
         body: SafeArea(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
