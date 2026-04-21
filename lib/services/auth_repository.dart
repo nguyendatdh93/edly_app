@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:edly/core/config/api_config.dart';
 import 'package:edly/core/network/app_exception.dart';
+import 'package:edly/models/account_device.dart';
 import 'package:edly/models/account_onboarding.dart';
 import 'package:edly/models/account_profile.dart';
 import 'package:edly/models/auth_session.dart';
@@ -260,6 +261,63 @@ class AuthRepository {
     }
   }
 
+  Future<AccountDeviceListResponse> fetchAccountDevices() async {
+    final activeToken = _requiredToken();
+
+    try {
+      final response = await _dio.get<dynamic>(
+        '/mobile/profile/devices',
+        options: _authorizedOptions(activeToken),
+      );
+
+      return AccountDeviceListResponse.fromJson(_responseMap(response));
+    } catch (error) {
+      _throwFormattedError(error);
+    }
+  }
+
+  Future<String> logoutAccountDevice(int deviceId) async {
+    final activeToken = _requiredToken();
+
+    try {
+      final response = await _dio.delete<dynamic>(
+        '/mobile/profile/devices/$deviceId',
+        options: _authorizedOptions(activeToken),
+      );
+
+      final payload = _responseMap(response);
+      final message = payload['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+
+      return 'Đã đăng xuất thiết bị đã chọn.';
+    } catch (error) {
+      _throwFormattedError(error);
+    }
+  }
+
+  Future<String> logoutOtherAccountDevices() async {
+    final activeToken = _requiredToken();
+
+    try {
+      final response = await _dio.post<dynamic>(
+        '/mobile/profile/devices/logout-others',
+        options: _authorizedOptions(activeToken),
+      );
+
+      final payload = _responseMap(response);
+      final message = payload['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+
+      return 'Đã đăng xuất các thiết bị khác.';
+    } catch (error) {
+      _throwFormattedError(error);
+    }
+  }
+
   Future<AccountOnboardingData> fetchAccountOnboarding() async {
     final activeToken = _requiredToken();
 
@@ -322,6 +380,36 @@ class AuthRepository {
         data.profile.toAuthUser(fallbackUser: currentUser),
       );
       return data;
+    } catch (error) {
+      _throwFormattedError(error);
+    }
+  }
+
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    final activeToken = _requiredToken();
+
+    try {
+      final response = await _dio.put<dynamic>(
+        '/mobile/profile/password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': newPasswordConfirmation,
+        },
+        options: _authorizedOptions(activeToken),
+      );
+
+      final payload = _responseMap(response);
+      final message = payload['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+
+      return 'Đổi mật khẩu thành công.';
     } catch (error) {
       _throwFormattedError(error);
     }

@@ -1,4 +1,5 @@
 import 'package:edly/core/config/flavor_config.dart';
+import 'package:flutter/foundation.dart';
 
 /// Cấu hình API cho app mobile. Có thể override bằng `--dart-define`.
 class ApiConfig {
@@ -19,8 +20,24 @@ class ApiConfig {
     return resolvedValue;
   }
 
-  static String get deviceName =>
-      'edly-mobile-app-${FlavorConfig.instance.flavor.name}';
+  static String get deviceName {
+    final flavor = FlavorConfig.instance.flavor.name;
+
+    if (kIsWeb) {
+      return 'Edly Web ($flavor)';
+    }
+
+    final platform = switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'Android',
+      TargetPlatform.iOS => 'iPhone',
+      TargetPlatform.macOS => 'macOS',
+      TargetPlatform.windows => 'Windows',
+      TargetPlatform.linux => 'Linux',
+      TargetPlatform.fuchsia => 'Fuchsia',
+    };
+
+    return 'Edly $platform ($flavor)';
+  }
 
   static String get googleServerClientId => const String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',

@@ -1,6 +1,7 @@
-import 'package:edly/core/navigation/app_routes.dart';
+﻿import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/account_profile/account_profile_view.dart';
 import 'package:edly/pages/admin/admin_dashboard_view.dart';
+import 'package:edly/pages/articles/article_list_view.dart';
 import 'package:edly/pages/home/home_constants.dart';
 import 'package:edly/pages/ielts_packages/ielts_packages_view.dart';
 import 'package:edly/pages/menu/user_course_list_view.dart';
@@ -72,8 +73,20 @@ class MenuDrawerView extends StatelessWidget {
   }
 
   Future<void> _openTeacherPage(BuildContext context) async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const TeacherView()));
+  }
+
+  Future<void> _openArticles(
+    BuildContext context, {
+    String title = 'Bài viết',
+  }) async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const TeacherView()),
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ArticleListView(title: title, currentTab: LearningDockTab.account),
+      ),
     );
   }
 
@@ -201,8 +214,8 @@ class MenuDrawerView extends StatelessWidget {
       return;
     }
 
-    if (title == 'bài viết' || title == 'hướng dẫn') {
-      _showMissingMobileApi(context, item.title);
+    if (title == 'bài viết') {
+      await _openArticles(context, title: item.title);
       return;
     }
 
@@ -212,12 +225,6 @@ class MenuDrawerView extends StatelessWidget {
   void _showComingSoon(BuildContext context, String title) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$title sẽ sớm có trên bản mobile.')),
-    );
-  }
-
-  void _showMissingMobileApi(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$title cần API mobile để hiển thị native.')),
     );
   }
 
@@ -339,7 +346,8 @@ class MenuDrawerView extends StatelessWidget {
                   const SizedBox(height: 12),
                   _SecondaryLinkCard(
                     title: 'Đăng ký giáo viên',
-                    subtitle: 'Gửi yêu cầu để mở quyền sử dụng công cụ giáo viên',
+                    subtitle:
+                        'Gửi yêu cầu để mở quyền sử dụng công cụ giáo viên',
                     icon: Icons.person_add_alt_1_outlined,
                     onTap: () => Future<void>.sync(
                       () => _showMissingMobileApi(context, 'Đăng ký giáo viên'),
@@ -400,9 +408,6 @@ class MenuDrawerView extends StatelessWidget {
     }
     if (normalized.contains('bài viết')) {
       return 'Xem bài viết và tài liệu tham khảo.';
-    }
-    if (normalized.contains('hướng dẫn')) {
-      return 'Xem các hướng dẫn sử dụng và học tập.';
     }
     return 'Mở nhanh nội dung tương ứng.';
   }
@@ -729,4 +734,10 @@ class _SecondaryLinkCard extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showMissingMobileApi(BuildContext context, String title) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('$title can API mobile de hien thi native.')),
+  );
 }

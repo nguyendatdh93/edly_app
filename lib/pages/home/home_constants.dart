@@ -27,7 +27,6 @@ class HomeContent {
     HomeDrawerItemData('SAT', Icons.auto_awesome_rounded),
     HomeDrawerItemData('Trang giáo viên', Icons.person_outline_rounded),
     HomeDrawerItemData('Bài viết', Icons.article_outlined),
-    HomeDrawerItemData('Hướng dẫn', Icons.info_outline_rounded),
     HomeDrawerItemData('Miễn phí SAT', Icons.menu_book_rounded),
     HomeDrawerItemData('Miễn phí IELTS', Icons.school_outlined),
   ];

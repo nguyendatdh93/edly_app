@@ -156,7 +156,7 @@ class _TeacherViewState extends State<TeacherView> {
             return RefreshIndicator(
               onRefresh: _reload,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 children: [
                   _TeacherHeader(
                     data: data,

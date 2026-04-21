@@ -1,6 +1,8 @@
-import 'package:edly/core/network/app_exception.dart';
+﻿import 'package:edly/core/network/app_exception.dart';
 import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/models/account_profile.dart';
+import 'package:edly/pages/account_profile/change_password_view.dart';
+import 'package:edly/pages/account_profile/device_management_view.dart';
 import 'package:edly/pages/home/home_view.dart';
 import 'package:edly/pages/menu/user_course_list_view.dart';
 import 'package:edly/services/auth_repository.dart';
@@ -191,7 +193,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
         _applyProfile(response.profile, response.form);
       });
 
-      final message = response.message ?? 'Cập nhật trang cá nhân thành công.';
+      final message =
+          response.message ??
+          'C\u1eadp nh\u1eadt trang c\u00e1 nh\u00e2n th\u00e0nh c\u00f4ng.';
 
       if (widget.isOnboarding) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -290,11 +294,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       return error.message;
     }
 
-    return 'Không thể tải thông tin tài khoản.';
+    return 'Kh\u00f4ng th\u1ec3 t\u1ea3i th\u00f4ng tin t\u00e0i kho\u1ea3n.';
   }
 
   void _handleProfileAction(String title) {
-    if (title == 'Gói đã mua') {
+    if (title == 'G\u00f3i \u0111\u00e3 mua') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
@@ -307,7 +311,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       return;
     }
 
-    if (title == 'Tiến độ học tập') {
+    if (title == 'Ti\u1ebfn \u0111\u1ed9 h\u1ecdc t\u1eadp') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
@@ -320,9 +324,24 @@ class _AccountProfileViewState extends State<AccountProfileView> {
       return;
     }
 
+    if (title == 'Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const DeviceManagementView(),
+        ),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('$title đang được đồng bộ từ web.')));
+    ).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$title \u0111ang \u0111\u01b0\u1ee3c \u0111\u1ed3ng b\u1ed9 t\u1eeb web.',
+        ),
+      ),
+    );
   }
 
   String? _sanitizeSelectValue(String? value, List<String> options) {
@@ -358,7 +377,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
               ? const Center(child: CircularProgressIndicator())
               : _screenData == null
               ? _ProfileErrorState(
-                  message: _errorMessage ?? 'Không thể tải dữ liệu hồ sơ.',
+                  message:
+                      _errorMessage ??
+                      'Kh\u00f4ng th\u1ec3 t\u1ea3i d\u1eef li\u1ec7u h\u1ed3 s\u01a1.',
                   onRetry: _loadProfile,
                 )
               : _buildLoadedState(context, _screenData!),
@@ -408,7 +429,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                   if (!widget.isOnboarding) const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      widget.isOnboarding ? 'Hoàn tất hồ sơ' : 'Trang cá nhân',
+                      widget.isOnboarding
+                          ? 'Ho\u00e0n t\u1ea5t h\u1ed3 s\u01a1'
+                          : 'Trang c\u00e1 nh\u00e2n',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -430,7 +453,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    'Hoàn tất hồ sơ sau khi đăng ký',
+                    'Ho\u00e0n t\u1ea5t h\u1ed3 s\u01a1 sau khi \u0111\u0103ng k\u00fd',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -439,7 +462,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Thêm vài thông tin cơ bản để Edly gợi ý lộ trình học phù hợp.',
+                  'Th\u00eam v\u00e0i th\u00f4ng tin c\u01a1 b\u1ea3n \u0111\u1ec3 Edly g\u1ee3i \u00fd l\u1ed9 tr\u00ecnh h\u1ecdc ph\u00f9 h\u1ee3p.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.92),
                     height: 1.45,
@@ -468,24 +491,24 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                   ),
                   const SizedBox(height: 16),
                   _SectionCard(
-                    title: 'Thông tin cơ bản',
+                    title: 'Th\u00f4ng tin c\u01a1 b\u1ea3n',
                     child: Column(
                       children: [
-                        _FieldLabel('Họ và tên'),
+                        _FieldLabel('H\u1ecd v\u00e0 t\u00ean'),
                         const SizedBox(height: 10),
                         _ProfileTextField(
                           controller: _nameController,
-                          hintText: 'Nhập họ và tên',
+                          hintText: 'Nh\u1eadp h\u1ecd v\u00e0 t\u00ean',
                           textInputAction: TextInputAction.next,
                           errorText: _fieldErrors['name'],
                           onChanged: (_) => _clearFieldError('name'),
                           validator: (_) {
                             if (_nameController.text.trim().isEmpty) {
-                              return 'Vui lòng nhập họ và tên.';
+                              return 'Vui l\u00f2ng nh\u1eadp h\u1ecd v\u00e0 t\u00ean.';
                             }
 
                             if (_nameController.text.trim().length > 100) {
-                              return 'Họ và tên tối đa 100 ký tự.';
+                              return 'H\u1ecd v\u00e0 t\u00ean t\u1ed1i \u0111a 100 k\u00fd t\u1ef1.';
                             }
 
                             return null;
@@ -497,7 +520,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                           const SizedBox(height: 10),
                           _ProfileTextField(
                             controller: _emailController,
-                            hintText: 'Nhập địa chỉ email',
+                            hintText: 'Nh\u1eadp \u0111\u1ecba ch\u1ec9 email',
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             enabled: form.email.editable,
@@ -511,14 +534,14 @@ class _AccountProfileViewState extends State<AccountProfileView> {
 
                               final email = _emailController.text.trim();
                               if (email.isEmpty) {
-                                return 'Vui lòng nhập email.';
+                                return 'Vui l\u00f2ng nh\u1eadp email.';
                               }
 
                               final emailPattern = RegExp(
                                 r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                               );
                               if (!emailPattern.hasMatch(email)) {
-                                return 'Địa chỉ email không đúng định dạng.';
+                                return '\u0110\u1ecba ch\u1ec9 email kh\u00f4ng \u0111\u00fang \u0111\u1ecbnh d\u1ea1ng.';
                               }
 
                               return null;
@@ -527,11 +550,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                         ],
                         if (form.userType.enabled) ...[
                           const SizedBox(height: 16),
-                          _FieldLabel('Bạn đang là?'),
+                          _FieldLabel('B\u1ea1n \u0111ang l\u00e0?'),
                           const SizedBox(height: 10),
                           _ProfileSelectField<String>(
                             value: _selectedUserType,
-                            hintText: 'Chọn loại tài khoản',
+                            hintText: 'Ch\u1ecdn lo\u1ea1i t\u00e0i kho\u1ea3n',
                             errorText: _fieldErrors['user_type'],
                             items: form.userTypeOptions
                                 .map(
@@ -555,7 +578,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
-                                return 'Vui lòng chọn.';
+                                return 'Vui l\u00f2ng ch\u1ecdn.';
                               }
                               return null;
                             },
@@ -563,11 +586,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                         ],
                         if (form.birthday.enabled) ...[
                           const SizedBox(height: 16),
-                          _FieldLabel('Năm sinh'),
+                          _FieldLabel('N\u0103m sinh'),
                           const SizedBox(height: 10),
                           _ProfileSelectField<String>(
                             value: _selectedBirthday,
-                            hintText: 'Chọn năm sinh',
+                            hintText: 'Ch\u1ecdn n\u0103m sinh',
                             errorText: _fieldErrors['birthday'],
                             items: form.birthYearOptions
                                 .map(
@@ -591,7 +614,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                 return null;
                               }
                               if (value == null || value.isEmpty) {
-                                return 'Vui lòng chọn năm sinh.';
+                                return 'Vui l\u00f2ng ch\u1ecdn n\u0103m sinh.';
                               }
                               return null;
                             },
@@ -605,15 +628,15 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                       form.school.enabled) ...[
                     const SizedBox(height: 16),
                     _SectionCard(
-                      title: 'Khu vực học tập',
+                      title: 'Khu v\u1ef1c h\u1ecdc t\u1eadp',
                       child: Column(
                         children: [
                           if (form.province.enabled) ...[
-                            _FieldLabel('Tỉnh/Thành phố'),
+                            _FieldLabel('T\u1ec9nh/Th\u00e0nh ph\u1ed1'),
                             const SizedBox(height: 10),
                             _ProfileSelectField<int>(
                               value: _selectedProvinceId,
-                              hintText: 'Chọn Tỉnh/Thành phố',
+                              hintText: 'Ch\u1ecdn T\u1ec9nh/Th\u00e0nh ph\u1ed1',
                               errorText: _fieldErrors['province_id'],
                               items: form.provinceOptions
                                   .map(
@@ -644,7 +667,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                   return null;
                                 }
                                 if (value == null) {
-                                  return 'Vui lòng chọn Tỉnh/Thành phố.';
+                                  return 'Vui l\u00f2ng ch\u1ecdn T\u1ec9nh/Th\u00e0nh ph\u1ed1.';
                                 }
                                 return null;
                               },
@@ -652,11 +675,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                           ],
                           if (form.district.enabled) ...[
                             const SizedBox(height: 16),
-                            _FieldLabel('Quận/Huyện'),
+                            _FieldLabel('Qu\u1eadn/Huy\u1ec7n'),
                             const SizedBox(height: 10),
                             _ProfileSelectField<int>(
                               value: _selectedDistrictId,
-                              hintText: 'Chọn Quận/Huyện',
+                              hintText: 'Ch\u1ecdn Qu\u1eadn/Huy\u1ec7n',
                               errorText: _fieldErrors['district_id'],
                               items: form.districtOptions
                                   .map(
@@ -686,7 +709,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                   return null;
                                 }
                                 if (value == null) {
-                                  return 'Vui lòng chọn Quận/Huyện.';
+                                  return 'Vui l\u00f2ng ch\u1ecdn Qu\u1eadn/Huy\u1ec7n.';
                                 }
                                 return null;
                               },
@@ -694,11 +717,11 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                           ],
                           if (form.school.enabled) ...[
                             const SizedBox(height: 16),
-                            _FieldLabel('Trường học'),
+                            _FieldLabel('Tr\u01b0\u1eddng h\u1ecdc'),
                             const SizedBox(height: 10),
                             _ProfileSelectField<int>(
                               value: _selectedSchoolId,
-                              hintText: 'Chọn trường học',
+                              hintText: 'Ch\u1ecdn tr\u01b0\u1eddng h\u1ecdc',
                               errorText: _fieldErrors['school_id'],
                               items: form.schoolOptions
                                   .map(
@@ -722,7 +745,7 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                                   return null;
                                 }
                                 if (value == null) {
-                                  return 'Vui lòng chọn trường học.';
+                                  return 'Vui l\u00f2ng ch\u1ecdn tr\u01b0\u1eddng h\u1ecdc.';
                                 }
                                 return null;
                               },
@@ -759,7 +782,9 @@ class _AccountProfileViewState extends State<AccountProfileView> {
                               ),
                             )
                           : Text(
-                              widget.isOnboarding ? 'HOÀN TẤT' : 'LƯU THAY ĐỔI',
+                              widget.isOnboarding
+                                  ? 'HO\u00c0N T\u1ea4T'
+                                  : 'L\u01afU THAY \u0110\u1ed4I',
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
@@ -825,7 +850,9 @@ class _ProfileSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  profile.name.isEmpty ? 'Tài khoản Edly' : profile.name,
+                  profile.name.isEmpty
+                      ? 'T\u00e0i kho\u1ea3n Edly'
+                      : profile.name,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF17233A),
                     fontWeight: FontWeight.w800,
@@ -833,7 +860,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  profile.phone ?? 'Chưa có số điện thoại',
+                  profile.phone ?? 'Ch\u01b0a c\u00f3 s\u1ed1 \u0111i\u1ec7n tho\u1ea1i',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFF61708A),
                     fontWeight: FontWeight.w600,
@@ -883,36 +910,47 @@ class _ProfileActionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = <_ProfileActionData>[
       const _ProfileActionData(
-        title: 'Đổi mật khẩu',
+        title: '\u0110\u1ed5i m\u1eadt kh\u1ea9u',
         icon: Icons.lock_reset_rounded,
       ),
       const _ProfileActionData(
-        title: 'Quản lý thiết bị',
+        title: 'Qu\u1ea3n l\u00fd thi\u1ebft b\u1ecb',
         icon: Icons.devices_other_rounded,
       ),
       const _ProfileActionData(
-        title: 'Gói đã mua',
+        title: 'G\u00f3i \u0111\u00e3 mua',
         icon: Icons.shopping_bag_outlined,
       ),
       const _ProfileActionData(
-        title: 'Tiến độ học tập',
+        title: 'Ti\u1ebfn \u0111\u1ed9 h\u1ecdc t\u1eadp',
         icon: Icons.bar_chart_rounded,
       ),
       if (isStaff)
         const _ProfileActionData(
-          title: 'Thông tin thanh toán',
+          title: 'Th\u00f4ng tin thanh to\u00e1n',
           icon: Icons.receipt_long_rounded,
         ),
     ];
 
     return _SectionCard(
-      title: 'Chức năng tài khoản',
+      title: 'Ch\u1ee9c n\u0103ng t\u00e0i kho\u1ea3n',
       child: Column(
         children: [
           for (var index = 0; index < actions.length; index++) ...[
             _ProfileActionTile(
               data: actions[index],
-              onTap: () => onActionTap(actions[index].title),
+              onTap: () {
+                if (actions[index].icon == Icons.lock_reset_rounded) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ChangePasswordView(),
+                    ),
+                  );
+                  return;
+                }
+
+                onActionTap(actions[index].title);
+              },
             ),
             if (index < actions.length - 1)
               const Divider(height: 1, color: Color(0xFFE2E8F3)),
@@ -1205,7 +1243,10 @@ class _ProfileErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Th\u1eed l\u1ea1i'),
+            ),
           ],
         ),
       ),

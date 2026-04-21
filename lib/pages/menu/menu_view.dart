@@ -1,5 +1,6 @@
 import 'package:edly/core/navigation/app_routes.dart';
 import 'package:edly/pages/account_profile/account_profile_view.dart';
+import 'package:edly/pages/articles/article_list_view.dart';
 import 'package:edly/pages/ielts_packages/ielts_packages_view.dart';
 import 'package:edly/pages/sat_packages/sat_packages_view.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,14 @@ class MenuView extends StatelessWidget {
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: AppRoutes.accountProfile),
         builder: (_) => const AccountProfileView(),
+      ),
+    );
+  }
+
+  Future<void> _openArticles(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ArticleListView(title: 'Bài viết'),
       ),
     );
   }
@@ -34,14 +43,6 @@ class MenuView extends StatelessWidget {
     );
   }
 
-  void _showComingSoon(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title sẽ sớm có trên bản mobile.'),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,7 +59,7 @@ class MenuView extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.article_outlined),
             title: const Text('Bài viết'),
-            onTap: () => _showComingSoon(context, 'Bài viết'),
+            onTap: () => _openArticles(context),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_outlined),
