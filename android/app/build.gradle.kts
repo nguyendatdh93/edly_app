@@ -1,11 +1,14 @@
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+
+
 android {
-    namespace = "com.example.edly"
+    namespace = "com.protean.edly"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.edly"
+        applicationId = "com.protean.edly"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -42,10 +45,10 @@ android {
         }
     }
 
+
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
-        }
+     
     }
 }
 
