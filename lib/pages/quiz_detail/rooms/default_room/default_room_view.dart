@@ -288,6 +288,7 @@ class _DefaultRoomViewState extends State<DefaultRoomView> {
               compact: compactTopBar,
             ),
             DefaultRoomActionBar(
+              currentQuestionNumber: _currentIndex + 1,
               answeredCount: answered,
               totalQuestions: _questions.length,
               onPrevious: _goPrevious,

@@ -60,13 +60,11 @@ class DefaultRoomQuestionCard extends StatelessWidget {
         return Container(
           width: double.infinity,
           height: hasBoundedHeight ? constraints.maxHeight : null,
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
           decoration: BoxDecoration(color: Colors.white),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
-              const SizedBox(height: 5),
               if (hasBoundedHeight) Expanded(child: content) else content,
             ],
           ),
@@ -89,7 +87,7 @@ class DefaultRoomQuestionCard extends StatelessWidget {
           ),
         ),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           child: VerticalDivider(
             width: 1,
             thickness: 1,
@@ -118,14 +116,14 @@ class DefaultRoomQuestionCard extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 180,
-          child: _SplitPanel( 
+          height: 176,
+          child: _SplitPanel(
             child: _buildQuestionHtmlPane(questionHtml),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Expanded(
-          child: _SplitPanel( 
+          child: _SplitPanel(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: isComprehensionWithChildren
@@ -339,7 +337,7 @@ class _SplitPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -14,12 +14,21 @@ class PurchasedCoursesView extends StatefulWidget {
 }
 
 class _PurchasedCoursesViewState extends State<PurchasedCoursesView> {
+  final TextEditingController _searchController = TextEditingController();
   late Future<HomeDashboardData> _dashboardFuture;
+  String _searchQuery = '';
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _dashboardFuture = HomeRepository.instance.fetchDashboard();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _reload() async {
@@ -67,6 +76,35 @@ class _PurchasedCoursesViewState extends State<PurchasedCoursesView> {
     return 'Không thể tải danh sách khóa học đã mua.';
   }
 
+  List<HomeCourseItem> _filterPurchased(List<HomeCourseItem> courses) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return courses;
+    }
+
+    return courses.where((course) {
+      final haystack = [
+        course.title,
+        course.description,
+        course.category ?? '',
+        course.slug,
+      ].join(' ').toLowerCase();
+      return haystack.contains(query);
+    }).toList(growable: false);
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      if (_isSearching) {
+        _isSearching = false;
+        _searchQuery = '';
+        _searchController.clear();
+      } else {
+        _isSearching = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,13 +112,64 @@ class _PurchasedCoursesViewState extends State<PurchasedCoursesView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text(
-          'Khóa học đã mua',
-          style: TextStyle(
-            color: HomePalette.textPrimary,
-            fontWeight: FontWeight.w800,
+        titleSpacing: 20,
+        title: _isSearching
+            ? SizedBox(
+                height: 42,
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Tìm khóa học đã mua',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: HomePalette.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: HomePalette.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: HomePalette.primary,
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : const Text(
+                'Khóa học đã mua',
+                style: TextStyle(
+                  color: HomePalette.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: _toggleSearch,
+              icon: Icon(
+                _isSearching ? Icons.close_rounded : Icons.search_rounded,
+                color: HomePalette.textPrimary,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
       bottomNavigationBar: const LearningDockBar(
         currentTab: LearningDockTab.purchasedCourses,
@@ -99,26 +188,32 @@ class _PurchasedCoursesViewState extends State<PurchasedCoursesView> {
             );
           }
 
-          final purchased =
-              snapshot.data?.purchased ?? const <HomeCourseItem>[];
+          final purchased = snapshot.data?.purchased ?? const <HomeCourseItem>[];
+          final filteredPurchased = _filterPurchased(purchased);
 
           return RefreshIndicator(
             onRefresh: _reload,
             child: purchased.isEmpty
                 ? const _PurchasedEmptyState()
+                : filteredPurchased.isEmpty
+                ? _PurchasedEmptyState(
+                    message:
+                        'Không tìm thấy khóa học phù hợp với "${_searchQuery.trim()}".',
+                  )
                 : ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-                    itemCount: purchased.length,
+                    itemCount: filteredPurchased.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final course = purchased[index];
+                      final course = filteredPurchased[index];
                       final visual = _purchasedVisualAt(index);
                       return _PurchasedCourseCard(
                         course: course,
                         visual: visual,
-                        onTap: () => _openCourse(course, purchased, index),
+                        onTap: () =>
+                            _openCourse(course, filteredPurchased, index),
                       );
                     },
                   ),
@@ -345,7 +440,11 @@ class _PurchasedErrorState extends StatelessWidget {
 }
 
 class _PurchasedEmptyState extends StatelessWidget {
-  const _PurchasedEmptyState();
+  const _PurchasedEmptyState({
+    this.message = 'Bạn chưa có khóa học đã mua để hiển thị.',
+  });
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -362,7 +461,7 @@ class _PurchasedEmptyState extends StatelessWidget {
             border: Border.all(color: HomePalette.border),
           ),
           child: Text(
-            'Bạn chưa có khóa học đã mua để hiển thị.',
+            message,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: HomePalette.textPrimary,
               fontWeight: FontWeight.w600,

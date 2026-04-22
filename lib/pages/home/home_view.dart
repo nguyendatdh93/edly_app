@@ -22,16 +22,16 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final PageController _pageController = PageController(viewportFraction: 0.92);
+  final TextEditingController _searchController = TextEditingController();
   Timer? _slideTimer;
   int _currentSlide = 0;
+  String _searchQuery = '';
   late Future<HomeDashboardData> _dashboardFuture;
-  late Future<List<HomeCollectionMenuItem>> _drawerMenuFuture;
 
   @override
   void initState() {
     super.initState();
     _dashboardFuture = HomeRepository.instance.fetchDashboard();
-    _drawerMenuFuture = HomeRepository.instance.fetchCollectionMenu();
     _startAutoSlide();
   }
 
@@ -39,7 +39,55 @@ class _HomeViewState extends State<HomeView> {
   void dispose() {
     _slideTimer?.cancel();
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  HomeDashboardData _filterDashboard(HomeDashboardData data, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) {
+      return data;
+    }
+
+    bool matchesCourse(HomeCourseItem course) {
+      final haystack = [
+        course.title,
+        course.description,
+        course.category ?? '',
+        course.slug,
+      ].join(' ').toLowerCase();
+      return haystack.contains(normalizedQuery);
+    }
+
+    return HomeDashboardData(
+      purchased: data.purchased.where(matchesCourse).toList(),
+      featured: data.featured.where(matchesCourse).toList(),
+      recent: data.recent.where(matchesCourse).toList(),
+      categories: data.categories
+          .map((section) {
+            final filteredCourses = section.courses.where(matchesCourse).toList();
+            final sectionMatches = [
+              section.title,
+              section.description,
+              section.slug,
+            ].join(' ').toLowerCase().contains(normalizedQuery);
+
+            if (!sectionMatches && filteredCourses.isEmpty) {
+              return null;
+            }
+
+            return HomeCategorySection(
+              id: section.id,
+              title: section.title,
+              slug: section.slug,
+              description: section.description,
+              viewAllUrl: section.viewAllUrl,
+              courses: sectionMatches ? section.courses : filteredCourses,
+            );
+          })
+          .whereType<HomeCategorySection>()
+          .toList(),
+    );
   }
 
   Future<void> _reloadDashboard() async {
@@ -49,35 +97,15 @@ class _HomeViewState extends State<HomeView> {
       // Nếu refresh user lỗi thì vẫn thử tải dashboard.
     }
     final dashboardFuture = HomeRepository.instance.fetchDashboard();
-    final drawerMenuFuture = HomeRepository.instance.fetchCollectionMenu();
 
     setState(() {
       _dashboardFuture = dashboardFuture;
-      _drawerMenuFuture = drawerMenuFuture;
     });
 
     try {
       await dashboardFuture;
     } catch (_) {
       // FutureBuilder sẽ render trạng thái lỗi.
-    }
-    try {
-      await drawerMenuFuture;
-    } catch (_) {
-      // Drawer sẽ render trạng thái lỗi.
-    }
-  }
-
-  Future<void> _reloadDrawerMenu() async {
-    final future = HomeRepository.instance.fetchCollectionMenu();
-    setState(() {
-      _drawerMenuFuture = future;
-    });
-
-    try {
-      await future;
-    } catch (_) {
-      // Drawer sẽ render trạng thái lỗi.
     }
   }
 
@@ -135,10 +163,6 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HomePalette.background,
-      drawer: _HomeDrawer(
-        menuFuture: _drawerMenuFuture,
-        onReloadMenu: _reloadDrawerMenu,
-      ),
       bottomNavigationBar: const LearningDockBar(
         currentTab: LearningDockTab.home,
       ),
@@ -153,14 +177,8 @@ class _HomeViewState extends State<HomeView> {
                   elevation: 0,
                   backgroundColor: Colors.white,
                   surfaceTintColor: Colors.white,
+                  automaticallyImplyLeading: false,
                   titleSpacing: 16,
-                  leading: IconButton(
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                    icon: const Icon(
-                      Icons.menu_rounded,
-                      color: HomePalette.textPrimary,
-                    ),
-                  ),
                   title: Row(
                     children: [
                       Image.asset(
@@ -186,12 +204,19 @@ class _HomeViewState extends State<HomeView> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // const _SearchBox(),
-                        const SizedBox(height: 18),
+                        _SearchBox(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 14),
                         // SizedBox(
                         //   height: 256,
                         //   child: PageView.builder(
@@ -218,7 +243,7 @@ class _HomeViewState extends State<HomeView> {
                         // ),
                         // const SizedBox(height: 12),
                         // _SlideIndicator(currentSlide: _currentSlide),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 18),
                         FutureBuilder<HomeDashboardData>(
                           future: _dashboardFuture,
                           builder: (context, snapshot) {
@@ -247,13 +272,21 @@ class _HomeViewState extends State<HomeView> {
                                   recent: [],
                                   categories: [],
                                 );
+                            final filteredDashboard = _filterDashboard(
+                              dashboard,
+                              _searchQuery,
+                            );
 
-                            if (dashboard.isEmpty) {
-                              return const _HomeEmptyState();
+                            if (filteredDashboard.isEmpty) {
+                              return _HomeEmptyState(
+                                message: _searchQuery.trim().isEmpty
+                                    ? 'Chưa có dữ liệu gói học để hiển thị trên trang chủ.'
+                                    : 'Không tìm thấy khóa học phù hợp với từ khóa "${_searchQuery.trim()}".',
+                              );
                             }
 
                             return _HomeSections(
-                              data: dashboard,
+                              data: filteredDashboard,
                               onCourseTap: _openCourseDetail,
                             );
                           },
@@ -303,9 +336,9 @@ class _HomeSections extends StatelessWidget {
             title: 'Gói học đã mua',
             subtitle: 'Tiếp tục học các khóa học bạn đã sở hữu',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 336,
+            height: 300,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.purchased.length,
@@ -325,7 +358,7 @@ class _HomeSections extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
         ],
         if (data.featured.isNotEmpty) ...[
           const _SectionHeader(
@@ -334,9 +367,9 @@ class _HomeSections extends StatelessWidget {
             title: 'Gói học nổi bật',
             subtitle: 'Những khóa học đang được quan tâm nhiều trên web',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 348,
+            height: 286,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.featured.length,
@@ -358,7 +391,7 @@ class _HomeSections extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
         ],
         if (data.recent.isNotEmpty) ...[
           const _SectionHeader(
@@ -367,9 +400,9 @@ class _HomeSections extends StatelessWidget {
             title: 'Gói học đã xem',
             subtitle: 'Tiếp tục học từ những khóa học bạn đã xem gần đây',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 348,
+            height: 286,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.recent.length,
@@ -391,14 +424,16 @@ class _HomeSections extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
         ],
-        ...data.categories.map(
-          (section) => Padding(
-            padding: const EdgeInsets.only(bottom: 30),
+        ...List.generate(data.categories.length, (index) {
+          final isLast = index == data.categories.length - 1;
+          final section = data.categories[index];
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
             child: _CategorySection(section: section, onCourseTap: onCourseTap),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -977,24 +1012,66 @@ class _DrawerProfileCard extends StatelessWidget {
 }
 
 class _SearchBox extends StatelessWidget {
-  const _SearchBox();
+  const _SearchBox({required this.controller, required this.onChanged});
+
+  static const _searchBorder = OutlineInputBorder(
+    borderSide: BorderSide.none,
+    borderRadius: BorderRadius.all(Radius.circular(999)),
+  );
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 54,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: HomePalette.border),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C0F172A),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: const TextField(
-        readOnly: true,
+      child: TextField(
+        controller: controller,
         onTapOutside: _dismissFocus,
-        decoration: InputDecoration(
-          icon: Icon(Icons.search_rounded, color: HomePalette.textMuted),
-          hintText: HomeContent.searchHint,
-          border: InputBorder.none,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: HomePalette.textPrimary,
+        ),
+        decoration: const InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: _searchBorder,
+          enabledBorder: _searchBorder,
+          focusedBorder: _searchBorder,
+          disabledBorder: _searchBorder,
+          errorBorder: _searchBorder,
+          focusedErrorBorder: _searchBorder,
+          hintText: 'Tìm kiếm khóa học',
+          hintStyle: TextStyle(
+            color: Color(0xFF9CA3AF),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(left: 2, right: 10),
+            child: Icon(Icons.search_rounded, size: 20, color: Color(0xFF9CA3AF)),
+          ),
+          suffixIcon: Padding(
+            padding: EdgeInsets.only(left: 10, right: 2),
+            child: Icon(Icons.mic_none_rounded, size: 18, color: Color(0xFF9CA3AF)),
+          ),
+          prefixIconConstraints: BoxConstraints(minWidth: 32, minHeight: 32),
+          suffixIconConstraints: BoxConstraints(minWidth: 28, minHeight: 28),
+          contentPadding: EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -1220,7 +1297,7 @@ class _PurchasedCourseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         child: Container(
           width: 296,
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: HomePalette.surface,
             borderRadius: BorderRadius.circular(22),
@@ -1231,7 +1308,7 @@ class _PurchasedCourseCard extends StatelessWidget {
             children: [
               _CourseThumbnail(
                 imageUrl: data.thumbnailUrl,
-                height: 142,
+                height: 136,
                 visual: visual,
                 badge: data.category ?? 'Đã mua',
                 badgeColor: visual.accentColor,
@@ -1240,7 +1317,7 @@ class _PurchasedCourseCard extends StatelessWidget {
                     : null,
                 footerIcon: Icons.play_circle_fill_rounded,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 data.title,
                 maxLines: 2,
@@ -1251,7 +1328,7 @@ class _PurchasedCourseCard extends StatelessWidget {
                   height: 1.3,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               Text(
                 data.shortDescription,
                 maxLines: 2,
@@ -1283,7 +1360,7 @@ class _PurchasedCourseCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
@@ -1318,79 +1395,58 @@ class _ShowcaseCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          width: 246,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: HomePalette.surface,
+    return Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: 246,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: HomePalette.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _CourseThumbnail(
-                imageUrl: data.thumbnailUrl,
-                height: 148,
-                visual: visual,
-                badge: tag,
-                badgeColor: visual.accentColor,
-                footerIcon: Icons.arrow_outward_rounded,
+            child: Container(
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: HomePalette.surface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: HomePalette.border),
               ),
-              const SizedBox(height: 14),
-              Text(
-                data.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: HomePalette.textPrimary,
-                  fontWeight: FontWeight.w800,
-                  height: 1.35,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CourseThumbnail(
+                    imageUrl: data.thumbnailUrl,
+                    height: 138,
+                    visual: visual,
+                    badge: tag,
+                    badgeColor: visual.accentColor,
+                    footerIcon: Icons.arrow_outward_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    data.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: HomePalette.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      height: 1.28,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    data.shortDescription,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: HomePalette.textSecondary,
+                      height: 1.32,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                data.shortDescription,
-                maxLines: 5,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: HomePalette.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-              // const Spacer(),
-              // Row(
-              //   children: [
-              //     Container(
-              //       width: 36,
-              //       height: 36,
-              //       decoration: BoxDecoration(
-              //         color: visual.accentColor.withValues(alpha: 0.12),
-              //         borderRadius: BorderRadius.circular(999),
-              //       ),
-              //       child: Icon(
-              //         Icons.workspace_premium_rounded,
-              //         color: visual.accentColor,
-              //       ),
-              //     ),
-              //     const SizedBox(width: 10),
-              //     // Expanded(
-              //     //   child: Text(
-              //     //     badge,
-              //     //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              //     //       color: HomePalette.textPrimary,
-              //     //       fontWeight: FontWeight.w700,
-              //     //     ),
-              //     //   ),
-              //     // ),
-              //   ],
-              // ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1421,9 +1477,9 @@ class _CategorySection extends StatelessWidget {
           title: 'Khóa học ${section.title}',
           subtitle: section.subtitle,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 348,
+          height: 286,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: section.courses.length,
@@ -1503,28 +1559,7 @@ class _CourseThumbnail extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                // child: Text(
-                //   badge,
-                //   style: TextStyle(
-                //     color: badgeColor,
-                //     fontSize: 12,
-                //     fontWeight: FontWeight.w700,
-                //   ),
-                // ),
-              ),
-            ),
+            
             if (footerLabel != null)
               Positioned(
                 left: 12,
@@ -1548,22 +1583,7 @@ class _CourseThumbnail extends StatelessWidget {
                   ),
                 ),
               ),
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Icon(
-                  footerIcon ?? Icons.open_in_new_rounded,
-                  color: visual.accentColor,
-                ),
-              ),
-            ),
+           
           ],
         ),
       ),
@@ -1615,7 +1635,11 @@ class _HomeErrorState extends StatelessWidget {
 }
 
 class _HomeEmptyState extends StatelessWidget {
-  const _HomeEmptyState();
+  const _HomeEmptyState({
+    this.message = 'Chưa có dữ liệu gói học để hiển thị trên trang chủ.',
+  });
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {

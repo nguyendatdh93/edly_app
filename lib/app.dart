@@ -1,6 +1,7 @@
 import 'package:edupen/app_bootstrap_view.dart';
 import 'package:edupen/core/config/flavor_config.dart';
 import 'package:edupen/pages/home/home_constants.dart';
+import 'package:edupen/pages/teacher/teacher_view.dart';
 import 'package:flutter/material.dart';
 
 class EdlyApp extends StatelessWidget {
@@ -47,6 +48,9 @@ class EdlyApp extends StatelessWidget {
           hintStyle: const TextStyle(color: HomePalette.textMuted),
         ),
       ),
+      routes: {
+        '/teacher': (_) => const TeacherView(),
+      },
       home: const AppBootstrapView(),
     );
   }

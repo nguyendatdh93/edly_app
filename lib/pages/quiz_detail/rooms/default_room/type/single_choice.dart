@@ -45,73 +45,74 @@ class _SingleChoiceOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prefix = _optionPrefix(index);
     final content = option.content.trim().isNotEmpty
         ? option.content
         : '<p>[Lựa chọn ${index + 1}]</p>';
+    final state = _resolveState(selected);
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEFF6FF) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color: state.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? const Color(0xFF93C5FD) : const Color(0xFFE5E7EB),
+            color: state.borderColor,
+            width: selected ? 2 : 1.5,
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 40,
-              child: Center(
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: selected ? const Color(0xFF3B82F6) : Colors.white,
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF3B82F6)
-                          : const Color(0xFFD1D5DB),
-                    ),
-                  ),
-                  child: Text(
-                    prefix,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1,
-                      color: selected ? Colors.white : const Color(0xFF4B5563),
-                    ),
-                  ),
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: state.borderColor),
+              ),
+              child: Text(
+                _optionPrefix(index),
+                style: TextStyle(
+                  color: state.labelColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Center(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: DefaultRoomHtmlView(
-                    html: content,
-                    fontSize: 10,
-                    minHeight: 28,
-                    maxAutoHeight: 320,
-                  ),
+              child: IgnorePointer(
+                child: DefaultRoomHtmlView(
+                  html: content,
+                  fontSize: 15,
+                  minHeight: 26,
+                  maxAutoHeight: 320,
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  _SingleChoiceOptionState _resolveState(bool selected) {
+    if (selected) {
+      return const _SingleChoiceOptionState(
+        backgroundColor: Color(0xFFEEF2FF),
+        borderColor: Color(0xFF2563EB),
+        labelColor: Color(0xFF2563EB),
+      );
+    }
+
+    return const _SingleChoiceOptionState(
+      backgroundColor: Color(0xFFF8FAFC),
+      borderColor: Color(0xFFCBD5E1),
+      labelColor: Color(0xFF334155),
     );
   }
 
@@ -122,4 +123,16 @@ class _SingleChoiceOption extends StatelessWidget {
     }
     return String.fromCharCode(65 + optionIndex);
   }
+}
+
+class _SingleChoiceOptionState {
+  const _SingleChoiceOptionState({
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.labelColor,
+  });
+
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color labelColor;
 }

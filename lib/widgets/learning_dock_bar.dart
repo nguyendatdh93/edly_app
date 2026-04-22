@@ -1,10 +1,11 @@
-import 'package:edupen/pages/account_profile/account_profile_view.dart';
-import 'package:edupen/pages/home/home_constants.dart';
+﻿import 'package:edupen/pages/home/home_constants.dart';
 import 'package:edupen/pages/home/home_view.dart';
+import 'package:edupen/pages/menu/menu_view.dart';
 import 'package:edupen/pages/purchased_courses/purchased_courses_view.dart';
+import 'package:edupen/pages/teacher/teacher_view.dart';
 import 'package:flutter/material.dart';
 
-enum LearningDockTab { home, purchasedCourses, account }
+enum LearningDockTab { home, purchasedCourses, teacher, account }
 
 class LearningDockBar extends StatelessWidget {
   const LearningDockBar({super.key, required this.currentTab});
@@ -25,8 +26,11 @@ class LearningDockBar extends StatelessWidget {
       case LearningDockTab.purchasedCourses:
         destination = const PurchasedCoursesView();
         break;
+      case LearningDockTab.teacher:
+        destination = const TeacherView();
+        break;
       case LearningDockTab.account:
-        destination = const AccountProfileView();
+        destination = const MenuView();
         break;
     }
 
@@ -38,24 +42,15 @@ class LearningDockBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.transparent,
-                blurRadius: 18,
-                offset: Offset(0, 6),
-              ),
-            ],
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Row(
             children: List.generate(_dockTabs.length, (index) {
               final tab = _dockTabs[index];
@@ -150,9 +145,15 @@ const List<_DockTabItem> _dockTabs = [
     activeIcon: Icons.menu_book_rounded,
   ),
   _DockTabItem(
+    tab: LearningDockTab.teacher,
+    label: 'Trang giáo viên',
+    icon: Icons.school_outlined,
+    activeIcon: Icons.school_rounded,
+  ),
+  _DockTabItem(
     tab: LearningDockTab.account,
-    label: 'Tài khoản',
-    icon: Icons.person_outline_rounded,
-    activeIcon: Icons.person_rounded,
+    label: 'Menu',
+    icon: Icons.menu_rounded,
+    activeIcon: Icons.menu_rounded,
   ),
 ];

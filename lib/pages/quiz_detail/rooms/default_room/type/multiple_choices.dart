@@ -82,11 +82,13 @@ class _MultipleChoiceOption extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: DefaultRoomHtmlView(
-                html: html,
-                fontSize: 16,
-                minHeight: 26,
-                maxAutoHeight: 320,
+              child: IgnorePointer(
+                child: DefaultRoomHtmlView(
+                  html: html,
+                  fontSize: 16,
+                  minHeight: 26,
+                  maxAutoHeight: 320,
+                ),
               ),
             ),
           ],

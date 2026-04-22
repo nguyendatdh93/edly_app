@@ -292,7 +292,7 @@ class _CourseDetailScaffold extends StatelessWidget {
         isLoading || errorMessage != null || !data.isFromApi;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: const Color(0xFFF7F6F2),
       bottomNavigationBar: LearningDockBar(currentTab: currentTab),
       body: SafeArea(
         bottom: false,
@@ -316,10 +316,8 @@ class _CourseDetailScaffold extends StatelessWidget {
                           onCurriculumTap: onCurriculumTap,
                           onPreviewTap: onLearningItemTap,
                         ),
-                        Transform.translate(
-                          offset: const Offset(0, -24),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                        Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -340,7 +338,7 @@ class _CourseDetailScaffold extends StatelessWidget {
                                         ? onRetry
                                         : null,
                                   ),
-                                  const SizedBox(height: 14),
+                                  const SizedBox(height: 16),
                                 ],
                                 _SectionCard(
                                   title: 'Giới thiệu về khóa học',
@@ -348,11 +346,19 @@ class _CourseDetailScaffold extends StatelessWidget {
                                     text: data.overview,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 18),
                                 KeyedSubtree(
                                   key: curriculumSectionKey,
                                   child: _SectionCard(
                                     title: 'Nội dung khóa học',
+                                    headerPadding: const EdgeInsets.fromLTRB(
+                                      0,
+                                      0,
+                                      0,
+                                      12,
+                                    ),
+                                    isPlain: true,
+                                    bodyPadding: EdgeInsets.zero,
                                     trailing: Text(
                                       '${data.totalSections} phần • ${data.totalLectures} bài giảng • ${data.totalQuizzes} đề thi',
                                       style: Theme.of(context)
@@ -380,7 +386,7 @@ class _CourseDetailScaffold extends StatelessWidget {
                                                           data.sections.length -
                                                               1
                                                       ? 0
-                                                      : 12,
+                                                      : 14,
                                                 ),
                                                 child: _CourseSectionTile(
                                                   index: index + 1,
@@ -394,10 +400,8 @@ class _CourseDetailScaffold extends StatelessWidget {
                                           ),
                                   ),
                                 ),
-                                const SizedBox(height: 32),
                               ],
                             ),
-                          ),
                         ),
                       ],
                     ),
@@ -436,11 +440,18 @@ class _InfoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: accentColor.withValues(alpha: 0.18)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100F172A),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,13 +508,14 @@ class _HeroSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: backgroundColors,
         ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 46),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -650,18 +662,27 @@ class _HeroMetaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: const Color(0xFFE1C9C9)),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: const Color(0xFFE1C9C9)),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFFE5E7EB)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: const Color(0xFFE5E7EB),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -675,11 +696,11 @@ class _HeroStatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.28),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -690,7 +711,7 @@ class _HeroStatChip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -714,10 +735,11 @@ class _ProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -746,8 +768,8 @@ class _ProgressCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               value: progress.clamp(0, 100) / 100,
-              minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              minHeight: 10,
+              backgroundColor: Colors.white.withValues(alpha: 0.16),
               valueColor: AlwaysStoppedAnimation<Color>(
                 accentColor.withValues(alpha: 0.96),
               ),
@@ -804,18 +826,18 @@ class _PurchaseCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFE7E5E4)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: Color(0x140F172A),
+            blurRadius: 22,
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(26),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -862,7 +884,7 @@ class _PurchaseCard extends StatelessWidget {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -898,7 +920,7 @@ class _PurchaseCard extends StatelessWidget {
                         color: const Color(0xFF6B7280),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                   ],
                   if (isPurchased)
                     Container(
@@ -909,7 +931,7 @@ class _PurchaseCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
@@ -936,11 +958,11 @@ class _PurchaseCard extends StatelessWidget {
                       child: FilledButton(
                         onPressed: isPurchasing ? null : () => onBalanceTap(),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 46),
-                          backgroundColor: const Color(0xFFF97316),
+                          minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: const Color(0xFF111827),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                         ),
                         child: Row(
@@ -971,18 +993,18 @@ class _PurchaseCard extends StatelessWidget {
                     ),
                   ],
                   if (onPreviewTap != null && !isPurchased) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () => onPreviewTap!(),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 44),
-                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          side: const BorderSide(color: Color(0xFFD6D3D1)),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(18),
                           ),
-                          foregroundColor: const Color(0xFF334155),
+                          foregroundColor: const Color(0xFF1F2937),
                         ),
                         child: const Text(
                           'Xem thử bài học',
@@ -1015,44 +1037,66 @@ class _PurchaseCard extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child, this.trailing});
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    this.trailing,
+    this.headerPadding = const EdgeInsets.all(18),
+    this.bodyPadding = const EdgeInsets.fromLTRB(18, 0, 18, 18),
+    this.isPlain = false,
+  });
 
   final String title;
   final Widget child;
   final Widget? trailing;
+  final EdgeInsetsGeometry headerPadding;
+  final EdgeInsetsGeometry bodyPadding;
+  final bool isPlain;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 14,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
+      decoration: isPlain
+          ? null
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFEAE7E1)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x120F172A),
+                  blurRadius: 24,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _SectionTitle(title: title)),
-              // if (trailing != null) ...[
-              //   const SizedBox(width: 12),
-              //   Flexible(child: trailing!),
-              // ],
-            ],
+          Padding(
+            padding: headerPadding,
+            child: isPlain && trailing != null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionTitle(title: title),
+                      const SizedBox(height: 6),
+                      trailing!,
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _SectionTitle(title: title)),
+                      if (trailing != null) ...[
+                        const SizedBox(width: 12),
+                        Flexible(child: trailing!),
+                      ],
+                    ],
+                  ),
           ),
-          const SizedBox(height: 14),
-          child,
+          Padding(padding: bodyPadding, child: child),
         ],
       ),
     );
@@ -1066,24 +1110,48 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        color: CourseDetailPalette.textPrimary,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+}
+
+class _CurriculumHeadline extends StatelessWidget {
+  const _CurriculumHeadline({
+    required this.totalSections,
+    required this.totalLectures,
+    required this.totalQuizzes,
+  });
+
+  final int totalSections;
+  final int totalLectures;
+  final int totalQuizzes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: CourseDetailPalette.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
+        _InlineChip(
+          label: '$totalSections phần',
+          backgroundColor: const Color(0xFFF5F3FF),
+          foregroundColor: const Color(0xFF6D28D9),
         ),
-        const SizedBox(height: 4),
-        Container(
-          width: 88,
-          height: 3,
-          decoration: BoxDecoration(
-            color: const Color(0xFF22C55E),
-            borderRadius: BorderRadius.circular(999),
-          ),
+        _InlineChip(
+          label: '$totalLectures bài giảng',
+          backgroundColor: const Color(0xFFECFDF5),
+          foregroundColor: const Color(0xFF047857),
+        ),
+        _InlineChip(
+          label: '$totalQuizzes đề thi',
+          backgroundColor: const Color(0xFFEFF6FF),
+          foregroundColor: const Color(0xFF1D4ED8),
         ),
       ],
     );
@@ -1112,7 +1180,7 @@ class _ExpandableOverviewState extends State<_ExpandableOverview> {
       children: [
         Text(
           text,
-          maxLines: !_expanded && canExpand ? 5 : null,
+          maxLines: !_expanded && canExpand ? 2 : null,
           overflow: !_expanded && canExpand ? TextOverflow.ellipsis : null,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: CourseDetailPalette.textPrimary,
@@ -1158,63 +1226,38 @@ class _CourseSectionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHidden = section.status.trim().toLowerCase() == 'hidden';
-    final headerColor = isHidden
-        ? const Color(0xFFE5E7EB)
-        : (isExam ? const Color(0xFFE0EEFF) : const Color(0xFFDBEAFE));
+    final sectionBg = isHidden
+        ? const Color(0xFFF8FAFC)
+        : Colors.white;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: headerColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFD1D5DB)),
+        color: sectionBg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
         child: ExpansionTile(
           key: PageStorageKey('course-section-${section.id}'),
-          tilePadding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          tilePadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           childrenPadding: EdgeInsets.zero,
           initiallyExpanded: index == 1,
           shape: const Border(),
           collapsedShape: const Border(),
-          leading: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.menu_book_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              Positioned(
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '$index',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1225,45 +1268,74 @@ class _CourseSectionTile extends StatelessWidget {
                     child: Text(
                       section.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: CourseDetailPalette.textPrimary,
+                        color: const Color(0xFF0F172A),
                         fontWeight: FontWeight.w800,
                         height: 1.3,
                       ),
                     ),
                   ),
                   if (section.isLocked)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8, top: 2),
-                      child: Icon(
-                        Icons.lock_outline_rounded,
-                        size: 16,
-                        color: CourseDetailPalette.textMuted,
+                    Container(
+                      margin: const EdgeInsets.only(left: 8, top: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            size: 14,
+                            color: Color(0xFF64748B),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Đã khóa',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],
               ),
               if (section.description.trim().isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   _toPlainText(section.description),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: CourseDetailPalette.textSecondary,
-                    height: 1.4,
+                    color: const Color(0xFF64748B),
+                    height: 1.45,
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  if (section.videoCount > 0)
+                    _InlineChip(
+                      icon: Icons.play_circle_outline_rounded,
+                      label: '${section.videoCount} video',
+                      backgroundColor: const Color(0xFFFAF5FF),
+                      foregroundColor: const Color(0xFF7C3AED),
+                    ),
                   if (section.docxCount > 0)
                     _InlineChip(
                       icon: Icons.description_outlined,
                       label: '${section.docxCount} tài liệu',
-                      backgroundColor: const Color(0xFFF3F4F6),
+                      backgroundColor: const Color(0xFFF8FAFC),
                       foregroundColor: const Color(0xFF334155),
                     ),
                   if (section.pdfCount > 0)
@@ -1273,24 +1345,10 @@ class _CourseSectionTile extends StatelessWidget {
                       backgroundColor: const Color(0xFFFEF2F2),
                       foregroundColor: const Color(0xFFDC2626),
                     ),
-                  if (section.pptCount > 0)
-                    _InlineChip(
-                      icon: Icons.slideshow_rounded,
-                      label: '${section.pptCount} PPT',
-                      backgroundColor: const Color(0xFFFFF7ED),
-                      foregroundColor: const Color(0xFFEA580C),
-                    ),
-                  if (section.videoCount > 0)
-                    _InlineChip(
-                      icon: Icons.play_circle_outline_rounded,
-                      label: '${section.videoCount} video',
-                      backgroundColor: const Color(0xFFFAF5FF),
-                      foregroundColor: const Color(0xFF7C3AED),
-                    ),
                   if (section.quizCount > 0)
                     _InlineChip(
                       icon: Icons.assignment_outlined,
-                      label: '${section.quizCount} đề thi',
+                      label: '${section.quizCount} quiz',
                       backgroundColor: const Color(0xFFDBEAFE),
                       foregroundColor: const Color(0xFF1D4ED8),
                     ),
@@ -1299,8 +1357,8 @@ class _CourseSectionTile extends StatelessWidget {
                     _InlineChip(
                       icon: Icons.schedule_rounded,
                       label: section.durationLabel!,
-                      backgroundColor: const Color(0xFFFFF1F2),
-                      foregroundColor: const Color(0xFFBE123C),
+                      backgroundColor: const Color(0xFFFFF7ED),
+                      foregroundColor: const Color(0xFFEA580C),
                     ),
                   if (section.isLocked && section.price > 0)
                     _InlineChip(
@@ -1315,15 +1373,22 @@ class _CourseSectionTile extends StatelessWidget {
           ),
           children: [
             Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(18),
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFCFCFD),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(24),
+                ),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.black.withValues(alpha: 0.04),
+                  ),
                 ),
               ),
               child: section.items.isEmpty
                   ? const Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.only(top: 8),
                       child: _EmptyLearningState(
                         message:
                             'Section này chưa có bài học hoặc đề thi để hiển thị.',
@@ -1332,10 +1397,11 @@ class _CourseSectionTile extends StatelessWidget {
                   : Column(
                       children: List.generate(
                         section.items.length,
-                        (itemIndex) => _LearningItemRow(
+                        (itemIndex) => _TimelineLearningItem(
                           item: section.items[itemIndex],
-                          onTap: () => onItemTap(section.items[itemIndex]),
+                          index: itemIndex,
                           isLast: itemIndex == section.items.length - 1,
+                          onTap: () => onItemTap(section.items[itemIndex]),
                         ),
                       ),
                     ),
@@ -1346,174 +1412,218 @@ class _CourseSectionTile extends StatelessWidget {
     );
   }
 }
-
-class _LearningItemRow extends StatelessWidget {
-  const _LearningItemRow({
+class _TimelineLearningItem extends StatelessWidget {
+  const _TimelineLearningItem({
     required this.item,
+    required this.index,
     required this.isLast,
     required this.onTap,
   });
 
   final CourseDetailLearningItem item;
+  final int index;
   final bool isLast;
   final Future<void> Function() onTap;
 
   @override
   Widget build(BuildContext context) {
     final toneColor = resolveCourseDetailTone(item.toneKey);
+    final iconData = resolveCourseDetailIcon(item.iconKey);
     final isFree = item.price <= 0;
+
     final actionLabel = isFree
-        ? (item.isQuiz ? 'THI THỬ' : 'XEM THỬ')
-        : (item.canOpen ? 'LUYỆN NGAY' : 'ĐẶT MUA');
+        ? (item.isQuiz ? 'Thi thử' : 'Xem')
+        : (item.canOpen ? 'Học ngay' : 'Mở khóa');
+
     final actionBackground = isFree
         ? const Color(0xFFF97316)
-        : const Color(0xFF16A34A);
+        : (item.canOpen
+            ? const Color(0xFF16A34A)
+            : const Color(0xFF2563EB));
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTap(),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          decoration: BoxDecoration(
-            border: Border(
-              top: const BorderSide(color: Color(0xFFE5E7EB)),
-              bottom: isLast
-                  ? BorderSide.none
-                  : const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: toneColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      resolveCourseDetailIcon(item.iconKey),
-                      color: toneColor,
-                      size: 18,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 34,
+            child: Column(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: toneColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: toneColor.withValues(alpha: 0.25),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  child: Icon(
+                    iconData,
+                    size: 16,
+                    color: toneColor,
+                  ),
+                ),
+                if (!isLast)
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      color: CourseDetailPalette.textPrimary,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.35,
-                                    ),
-                              ),
-                            ),
-                            if (item.isLocked)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 6, top: 2),
-                                child: Icon(
-                                  Icons.lock_outline_rounded,
-                                  size: 16,
-                                  color: CourseDetailPalette.textMuted,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _InlineChip(
-                              label: item.typeLabel,
-                              backgroundColor: toneColor.withValues(alpha: 0.1),
-                              foregroundColor: toneColor,
-                            ),
-                            if (item.badgeLabel != null &&
-                                item.badgeLabel!.isNotEmpty)
-                              _InlineChip(
-                                label: item.badgeLabel!,
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                foregroundColor: const Color(0xFF334155),
-                              ),
-                            if (item.questionCount != null &&
-                                item.questionCount! > 0)
-                              _InlineChip(
-                                label: '${item.questionCount} câu hỏi',
-                                backgroundColor: const Color(0xFFF97316),
-                                foregroundColor: Colors.white,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  if (item.price > 0)
-                    Text(
-                      _formatVnd(item.price),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFDC2626),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    )
-                  else
-                    _InlineChip(
-                      label: 'Miễn phí',
-                      backgroundColor: const Color(0xFF9CA3AF),
-                      foregroundColor: Colors.white,
-                    ),
-                  const Spacer(),
-                  FilledButton(
-                    onPressed: () => onTap(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: actionBackground,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
-                    child: Text(
-                      actionLabel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
                   ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              margin: EdgeInsets.only(bottom: isLast ? 0 : 14),
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: InkWell(
+                onTap: () => onTap(),
+                borderRadius: BorderRadius.circular(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                 
+                                  if (item.badgeLabel != null &&
+                                      item.badgeLabel!.trim().isNotEmpty) ...[
+                                    const SizedBox(width: 6),
+                                    _InlineChip(
+                                      label: item.badgeLabel!,
+                                      backgroundColor: const Color(0xFFF1F5F9),
+                                      foregroundColor: const Color(0xFF475569),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                item.title,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
+                                      color: const Color(0xFF0F172A),
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.35,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (item.isLocked)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 15,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InlineChip(
+                          label: item.typeLabel,
+                          backgroundColor: toneColor.withValues(alpha: 0.1),
+                          foregroundColor: toneColor,
+                        ),
+                        if (item.questionCount != null &&
+                            item.questionCount! > 0)
+                          _InlineChip(
+                            label: '${item.questionCount} câu hỏi',
+                            backgroundColor: const Color(0xFFF8FAFC),
+                            foregroundColor: const Color(0xFF334155),
+                          ),
+                        _InlineChip(
+                          label: isFree ? 'Miễn phí' : _formatVnd(item.price),
+                          backgroundColor: isFree
+                              ? const Color(0xFFECFDF5)
+                              : const Color(0xFFFEF2F2),
+                          foregroundColor: isFree
+                              ? const Color(0xFF15803D)
+                              : const Color(0xFFDC2626),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.isQuiz
+                                ? 'Làm bài để kiểm tra mức độ hiểu bài và luyện tập.'
+                                : 'Mở nội dung để tiếp tục học trong section này.',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: const Color(0xFF64748B),
+                                      height: 1.4,
+                                    ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        FilledButton(
+                          onPressed: () => onTap(),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: actionBackground,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            actionLabel,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
 class _InlineChip extends StatelessWidget {
   const _InlineChip({
     required this.label,
@@ -1530,10 +1640,11 @@ class _InlineChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: foregroundColor.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1593,11 +1704,20 @@ class _EmptyLearningState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      message,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: CourseDetailPalette.textSecondary,
-        height: 1.45,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: CourseDetailPalette.textSecondary,
+          height: 1.5,
+        ),
       ),
     );
   }

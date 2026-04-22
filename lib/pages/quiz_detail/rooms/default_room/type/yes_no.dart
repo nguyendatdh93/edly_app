@@ -20,46 +20,50 @@ class YesNo extends StatelessWidget {
       children: [
         for (var index = 0; index < question.options.length; index++)
           Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE5E7EB)),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                  child: IgnorePointer(
                     child: DefaultRoomHtmlView(
                       html: _optionHtml(index, question.options[index]),
-                      fontSize: 10,
+                      fontSize: 15,
                       minHeight: 26,
                       maxAutoHeight: 320,
                     ),
                   ),
                 ),
-                const SizedBox(width: 5),
-                _YesNoButton(
-                  label: 'Đ',
-                  selected: values[question.options[index].id] == true,
-                  selectedColor: const Color(0xFF2563EB),
-                  onTap: () {
-                    onToggle(question.options[index].id, true);
-                  },
-                ),
-                const SizedBox(width: 5),
-                _YesNoButton(
-                  label: 'S',
-                  selected:
-                      values.containsKey(question.options[index].id) &&
-                      values[question.options[index].id] == false,
-                  selectedColor: const Color(0xFFEF4444),
-                  onTap: () {
-                    onToggle(question.options[index].id, false);
-                  },
+                const SizedBox(width: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _YesNoButton(
+                      label: 'Đ',
+                      selected: values[question.options[index].id] == true,
+                      selectedColor: const Color(0xFF2563EB),
+                      onTap: () {
+                        onToggle(question.options[index].id, true);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _YesNoButton(
+                      label: 'S',
+                      selected:
+                          values.containsKey(question.options[index].id) &&
+                          values[question.options[index].id] == false,
+                      selectedColor: const Color(0xFFEF4444),
+                      onTap: () {
+                        onToggle(question.options[index].id, false);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

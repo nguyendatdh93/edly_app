@@ -115,6 +115,7 @@ class DefaultRoomHeader extends StatelessWidget {
 class DefaultRoomActionBar extends StatelessWidget {
   const DefaultRoomActionBar({
     super.key,
+    required this.currentQuestionNumber,
     required this.answeredCount,
     required this.totalQuestions,
     required this.onPrevious,
@@ -133,6 +134,7 @@ class DefaultRoomActionBar extends StatelessWidget {
     this.compact = false,
   });
 
+  final int currentQuestionNumber;
   final int answeredCount;
   final int totalQuestions;
   final VoidCallback? onPrevious;
@@ -164,10 +166,10 @@ class DefaultRoomActionBar extends StatelessWidget {
         compact ? 8 : 10,
         compact ? 3 : 4,
       ),
-      child: Row(
+        child: Row(
         children: [
           Text(
-            'Đã làm: $answeredCount / $totalQuestions',
+            'Câu $currentQuestionNumber • Đã làm: $answeredCount/$totalQuestions',
             style: TextStyle(
               color: const Color(0xFF334155),
               fontWeight: FontWeight.w700,
@@ -190,6 +192,9 @@ class DefaultRoomActionBar extends StatelessWidget {
                       label: 'Đánh dấu',
                       onTap: onBookmark,
                       selected: isCurrentBookmarked,
+                      selectedBackgroundColor: const Color(0xFFFFEDD5),
+                      selectedBorderColor: const Color(0xFFFB923C),
+                      selectedForegroundColor: const Color(0xFFC2410C),
                       height: baseHeight,
                       compact: compact,
                     ),
@@ -279,12 +284,12 @@ class DefaultRoomSideNavigationButton extends StatelessWidget {
       ).copyWith(
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
-            return faded(baseFgColor, 0.2);
+            return faded(baseFgColor, 0.45);
           }
           if (states.contains(WidgetState.pressed)) {
             return baseFgColor;
           }
-          return faded(baseFgColor, 0.2);
+          return faded(baseFgColor, 0.92);
         }),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
@@ -323,6 +328,9 @@ class _MiniActionButton extends StatelessWidget {
     required this.compact,
     this.primary = false,
     this.selected = false,
+    this.selectedBackgroundColor,
+    this.selectedBorderColor,
+    this.selectedForegroundColor,
   });
 
   final IconData icon;
@@ -332,23 +340,26 @@ class _MiniActionButton extends StatelessWidget {
   final bool compact;
   final bool primary;
   final bool selected;
+  final Color? selectedBackgroundColor;
+  final Color? selectedBorderColor;
+  final Color? selectedForegroundColor;
 
   @override
   Widget build(BuildContext context) {
     final bgColor = primary
         ? const Color(0xFF4F46E5)
         : selected
-            ? const Color(0xFFE0E7FF)
+            ? (selectedBackgroundColor ?? const Color(0xFFE0E7FF))
             : Colors.white;
     final borderColor = primary
         ? const Color(0xFF4F46E5)
         : selected
-            ? const Color(0xFF818CF8)
+            ? (selectedBorderColor ?? const Color(0xFF818CF8))
             : const Color(0xFFCBD5E1);
     final fgColor = primary
         ? Colors.white
         : selected
-            ? const Color(0xFF3730A3)
+            ? (selectedForegroundColor ?? const Color(0xFF3730A3))
             : const Color(0xFF334155);
 
     return SizedBox(
@@ -380,4 +391,3 @@ class _MiniActionButton extends StatelessWidget {
     );
   }
 }
-
